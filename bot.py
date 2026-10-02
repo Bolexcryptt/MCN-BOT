@@ -13,8 +13,8 @@ dp.include_router(user.router)
 dp.include_router(profile.router)
 dp.include_router(invite.router)
 dp.include_router(leaderboard.router)
-dp.include_router(vault.router)  # keep vault LAST
 dp.include_router(navigation.router)
+dp.include_router(vault.router)  # message catch-all must remain last
 
 async def main():
     await init_db()

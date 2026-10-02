@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, patch
 from aiogram.types import InlineKeyboardMarkup
 
 from handlers import invite, leaderboard, profile, vault
+from handlers.navigation import home_keyboard
 
 
 class BackButtonCoverageTest(unittest.IsolatedAsyncioTestCase):
@@ -24,6 +25,24 @@ class BackButtonCoverageTest(unittest.IsolatedAsyncioTestCase):
         markup = message.sent[-1][1]["reply_markup"]
         self.assertIsInstance(markup, InlineKeyboardMarkup)
         self.assertEqual(markup.inline_keyboard[-1][0].callback_data, "navigation:home")
+
+    async def test_guardian_hub_has_every_primary_destination(self):
+        destinations = {
+            button.callback_data
+            for row in home_keyboard().inline_keyboard
+            for button in row
+        }
+        self.assertEqual(
+            destinations,
+            {
+                "hub:vault",
+                "hub:trials",
+                "hub:profile",
+                "hub:leaderboard",
+                "hub:invite",
+                "hub:daily",
+            },
+        )
 
     async def test_profile_screen_has_back_button(self):
         message = self.make_message()
@@ -48,7 +67,10 @@ class BackButtonCoverageTest(unittest.IsolatedAsyncioTestCase):
     async def test_invite_screen_has_back_button(self):
         message = self.make_message()
         message.bot = SimpleNamespace(get_me=AsyncMock(return_value=SimpleNamespace(username="test_bot")))
-        with patch("handlers.invite.ensure_user", new_callable=AsyncMock):
+        with (
+            patch("handlers.invite.ensure_user", new_callable=AsyncMock),
+            patch("handlers.invite.get_invite_stats", new_callable=AsyncMock, return_value=(2, 100)),
+        ):
             await invite.invite(message)
 
         self.assert_last_message_has_back(message)
