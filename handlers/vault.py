@@ -21,41 +21,312 @@ from handlers.navigation import back_keyboard, send_screen
 router = Router()
 
 QUESTIONS = [
-    ("What is 2 + 2?", "4"),
-    ("What is 5 + 3?", "8"),
-    ("What is 10 - 4?", "6"),
-    ("What is the name of our guardian leader?", "oria"),
-    ("Who is always watching the system?", "oria"),
-    ("Who guides the guardians?", "oria"),
-    ("What protects the MCN ecosystem?", "the vault"),
-    ("What is the central system of MCN?", "the vault"),
-    ("What must guardians protect?", "the vault"),
-    ("Who are the community members?", "guardians"),
-    ("What do we call active members?", "guardians"),
-    ("Who protects and builds?", "guardians"),
-    ("What is our growth style?", "organic"),
-    ("How does MCN grow?", "organic"),
-    ("Where are we building?", "base"),
-    ("What chain are we focused on?", "base"),
-    ("What do Guardians do?", "protect and build"),
-    ("What is a Guardian's duty?", "protect and build"),
-    ("What happens when you earn points?", "the vault grows"),
-    ("What does energy do?", "strengthens the vault"),
-    ("What is the highest rank?", "ambassador"),
-    ("Who represents MCN externally?", "ambassador"),
-    ("What rank comes after Guardian?", "elite guardian"),
-    ("What rank comes after Elite Guardian?", "royal guardian"),
-    ("What does Oria observe?", "guardians"),
-    ("Who is rising in the system?", "guardians"),
-    ("What must you do during Vault attacks?", "defend"),
-    ("What word protects the vault?", "defend"),
-    ("What is rewarded in trials?", "energy"),
-    ("What do you gain from activity?", "energy"),
+    (
+        "👁️ Oria has watched over the Kingdom since its beginning. What is her role in the Guardian system?",
+        "The Kingdom's watchful guide",
+        "The Kingdom's appointed ruler",
+    ),
+    (
+        "🏛️ The Vault is under threat. What is every Guardian expected to do?",
+        "Stand together and defend it",
+        "Withdraw and leave it unguarded",
+    ),
+    (
+        "🛡️ A newcomer enters the Kingdom as a Guardian. What is their first responsibility?",
+        "Protect and build the Kingdom",
+        "Claim rank before serving",
+    ),
+    (
+        "👑 A Guardian seeks the Royal Guardian path. What earns that progression?",
+        "Proven service through the trials",
+        "A title chosen at the entrance",
+    ),
+    (
+        "🏰 What does the Vault represent at the heart of the MCN Kingdom?",
+        "The Kingdom's shared stronghold",
+        "A private throne for one Guardian",
+    ),
+    (
+        "👁️ Why does Oria continually observe the Guardians?",
+        "To witness and guide their actions",
+        "To replace their choices with orders",
+    ),
+    (
+        "🛡️ What separates a Guardian from an ordinary visitor?",
+        "A duty to defend and build",
+        "A right to rule without service",
+    ),
+    (
+        "⚡ What does Energy signify in Guardian progression?",
+        "Progress earned through participation",
+        "A title granted at arrival",
+    ),
+    (
+        "🏛️ When the Vault's defenses weaken, which response honors a Guardian's oath?",
+        "Rally to restore its defenses",
+        "Wait for another Guardian to act",
+    ),
+    (
+        "👁️ Oria sees a Guardian complete a trial. What does that moment show?",
+        "The Guardian has faced the test",
+        "The Guardian now commands Oria",
+    ),
+    (
+        "🛡️ A Guardian wants the Kingdom to grow stronger. Which path serves that purpose?",
+        "Build alongside fellow Guardians",
+        "Keep strength for themselves alone",
+    ),
+    (
+        "🏰 The Kingdom faces a difficult season. What keeps its Guardians united?",
+        "Their shared duty to the Vault",
+        "A contest to abandon the weakest",
+    ),
+    (
+        "👑 What does the Royal Guardian title mark in the Kingdom?",
+        "A higher step earned through service",
+        "A separate rank outside the trials",
+    ),
+    (
+        "🧭 A Guardian has advanced beyond the Royal path. What does Ambassador represent?",
+        "A Guardian trusted to represent MCN",
+        "A Guardian released from the Kingdom",
+    ),
+    (
+        "📜 A new trial is announced beneath Oria's gaze. Why do Guardians enter it?",
+        "To prove their resolve through action",
+        "To bypass the Kingdom's progression",
+    ),
+    (
+        "🏛️ Why is the Vault central to the Guardian system?",
+        "It is the stronghold they protect",
+        "It is a prize kept by Oria alone",
+    ),
+    (
+        "👁️ Oria watches Guardians make their own choices. What does her watchfulness reinforce?",
+        "Accountability within the Kingdom",
+        "Obedience without personal judgment",
+    ),
+    (
+        "🛡️ A Guardian finds a breach in the Vault's defenses. What should happen next?",
+        "Help defend and strengthen the breach",
+        "Hide the breach to protect their rank",
+    ),
+    (
+        "⚡ A Guardian gains Energy after a trial. What has that reward recorded?",
+        "Their earned progression",
+        "Their authority over other Guardians",
+    ),
+    (
+        "🏰 What is the purpose of the MCN Kingdom?",
+        "A community built and defended together",
+        "A realm ruled by a lone champion",
+    ),
+    (
+        "🛡️ Two Guardians disagree while defending the Vault. What should guide them?",
+        "The Kingdom's shared purpose",
+        "The highest ranker's personal gain",
+    ),
+    (
+        "👑 Which path leads a Guardian toward becoming Royal?",
+        "Continue serving through progression",
+        "Skip the trials and claim the crown",
+    ),
+    (
+        "🤝 A Guardian welcomes a new ally. How should they introduce the Kingdom?",
+        "Invite them to protect and build",
+        "Promise them rule over the Vault",
+    ),
+    (
+        "👁️ Oria witnesses a Guardian help another. What does that act strengthen?",
+        "Trust among the Guardians",
+        "One Guardian's claim to the throne",
+    ),
+    (
+        "🏛️ What is a Guardian protecting when they defend the Vault?",
+        "The Kingdom and its shared future",
+        "A personal store of rank titles",
+    ),
+    (
+        "🛡️ What is expected of a Guardian after completing a trial?",
+        "Return to the work of the Kingdom",
+        "Leave the Vault to the next recruit",
+    ),
+    (
+        "⚡ Why does Energy matter to a rising Guardian?",
+        "It reflects earned advancement",
+        "It replaces service to the Kingdom",
+    ),
+    (
+        "🏰 A visitor asks who builds the MCN Kingdom. What is the Guardian's answer?",
+        "Guardians build it together",
+        "Oria builds it without the Guardians",
+    ),
+    (
+        "👑 How should an Ambassador carry the MCN identity beyond the Vault?",
+        "Represent the Kingdom with responsibility",
+        "Speak only for their own rank",
+    ),
+    (
+        "👁️ What is Oria's relationship to the Vault?",
+        "She watches over its Guardians",
+        "She owns it apart from the Kingdom",
+    ),
+    (
+        "🛡️ A Guardian sees the Kingdom under pressure. What does their duty call for?",
+        "Stand firm and help defend it",
+        "Protect only their personal progress",
+    ),
+    (
+        "📈 What does Kingdom progression ask of a Guardian?",
+        "Grow through trials and service",
+        "Collect titles without taking part",
+    ),
+    (
+        "🏛️ Why do Guardians return to the Vault after a victory?",
+        "Its defense remains a shared duty",
+        "The Vault belongs to the latest victor",
+    ),
+    (
+        "🤝 What makes the Guardian system stronger?",
+        "Guardians supporting the Kingdom together",
+        "Guardians competing to stand alone",
+    ),
+    (
+        "👑 Which statement best describes the Royal Guardian path?",
+        "A mark of deeper commitment",
+        "An exit from Guardian responsibility",
+    ),
+    (
+        "🧭 Why does the Kingdom need Ambassadors?",
+        "To carry MCN's identity outward",
+        "To replace Oria inside the Vault",
+    ),
+    (
+        "👁️ A Guardian acts while Oria watches. What gives that action meaning?",
+        "Choosing to serve the Kingdom",
+        "Waiting for Oria to act instead",
+    ),
+    (
+        "🏰 What should a Guardian's effort leave behind in the Kingdom?",
+        "A stronger Vault and community",
+        "A higher wall between Guardians",
+    ),
+    (
+        "🛡️ The Vault is safe for now. Does a Guardian's duty end there?",
+        "No, they keep building and defending",
+        "Yes, service ends with each victory",
+    ),
+    (
+        "⚡ How is a Guardian's progress best understood?",
+        "As earned steps within the system",
+        "As permission to ignore the system",
+    ),
+    (
+        "📜 What does entering a Guardian trial mean?",
+        "Accepting a test within the Kingdom",
+        "Receiving an instant rank promotion",
+    ),
+    (
+        "🏛️ A Guardian calls the Vault a shared stronghold. What follows from that?",
+        "Its defense belongs to every Guardian",
+        "Its keys belong to the oldest Guardian",
+    ),
+    (
+        "👁️ Why does Oria witness both victories and failures?",
+        "The trials reveal a Guardian's journey",
+        "Only victories count as Kingdom history",
+    ),
+    (
+        "🛡️ A Guardian has earned a higher rank. What should change?",
+        "Their service and responsibility deepen",
+        "Their duty to the Vault disappears",
+    ),
+    (
+        "🏰 What does it mean to build the MCN Kingdom?",
+        "Strengthen its community and purpose",
+        "Keep its purpose hidden from Guardians",
+    ),
+    (
+        "🤝 A Guardian recruits a new member. What are they bringing into the Kingdom?",
+        "Another ally to build and defend",
+        "A replacement for Oria's watch",
+    ),
+    (
+        "👑 What is an Ambassador trusted to carry?",
+        "The MCN identity and its purpose",
+        "A private claim to the Vault",
+    ),
+    (
+        "⚔️ A threat tests the Kingdom. What is the Guardian response?",
+        "Unite to defend the Vault",
+        "Wait for rank to defend itself",
+    ),
+    (
+        "🌱 How does the Guardian community make the Kingdom endure?",
+        "By building together over time",
+        "By relying on one Guardian alone",
+    ),
+    (
+        "👁️ Oria watches the Guardians progress. What does she witness?",
+        "Their choices, trials and service",
+        "A rank ladder with no participants",
+    ),
+    (
+        "🏛️ What does a Guardian's place in the Vault community mean?",
+        "They share in its defense and growth",
+        "They stand above its shared purpose",
+    ),
+    (
+        "🛡️ What is the first principle of Guardian duty?",
+        "Protect the Kingdom and build it",
+        "Seek a title before helping anyone",
+    ),
+    (
+        "📈 How does a Guardian approach the next rank?",
+        "Keep earning progress through action",
+        "Ask Oria to skip their service",
+    ),
+    (
+        "🏰 Why do the Guardians defend the Kingdom together?",
+        "Its future is a shared responsibility",
+        "Only the highest rank has a future",
+    ),
+    (
+        "👑 What distinguishes an Ambassador's progression from a new Guardian's?",
+        "Greater trust to represent MCN",
+        "Freedom from every Guardian duty",
+    ),
+    (
+        "🧭 A Guardian asks what to do after joining. What should guide their first steps?",
+        "Learn the lore and serve the Kingdom",
+        "Demand the highest rank immediately",
+    ),
+    (
+        "⚡ What does each earned step of Energy represent?",
+        "Participation in Guardian progression",
+        "Ownership of another Guardian's effort",
+    ),
+    (
+        "🏛️ Why must the Vault never be treated as one Guardian's prize?",
+        "It stands at the heart of the Kingdom",
+        "It is only a ladder to personal rule",
+    ),
+    (
+        "👁️ What does Oria's presence remind each Guardian?",
+        "Their actions are seen in the Kingdom",
+        "Their choices belong to Oria alone",
+    ),
+    (
+        "🛡️ What does it mean to defend and build the Kingdom?",
+        "Protect its stronghold and help it grow",
+        "Guard your title and leave it unchanged",
+    ),
 ]
 
 vault_users: dict[int, int] = {}
 question_users: dict[int, bool] = {}
 current_answers: dict[int, str] = {}
+current_wrong_answers: dict[int, str] = {}
 current_tokens: dict[int, str] = {}
 user_points: dict[int, int] = {}
 last_vault: dict[int, object] = {}
@@ -79,9 +350,15 @@ def _category(question: str, answer: str) -> str:
     return "🧠 Knowledge Trial"
 
 
-def _answer_options(answer: str) -> list[str]:
-    wrong_answers = list(dict.fromkeys(item[1] for item in QUESTIONS if item[1] != answer))
-    options = [answer, random.choice(wrong_answers)]
+def _wrong_answer(question: str) -> str:
+    for prompt, _answer, wrong in QUESTIONS:
+        if prompt == question:
+            return wrong
+    raise ValueError(f"Question is not in the Guardian trial collection: {question!r}")
+
+
+def _answer_options(answer: str, wrong_answer: str) -> list[str]:
+    options = [answer, wrong_answer]
     random.shuffle(options)
     return options
 
@@ -90,26 +367,39 @@ def build_answer_keyboard(
     user_id: int,
     options: list[str],
     token: str = "manual",
+    correct_answer: str | None = None,
 ) -> InlineKeyboardMarkup:
+    correct_answer = correct_answer or options[0]
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(
                 text=option,
-                callback_data=f"answer:{user_id}:{token}:{option}",
+                callback_data=(
+                    f"answer:{user_id}:{token}:"
+                    f"{'correct' if option == correct_answer else 'wrong'}"
+                ),
             )]
             for option in options
         ] + [[InlineKeyboardButton(text="⬅️ Back", callback_data="navigation:home")]]
     )
 
 
-def _daily_keyboard(user_id: int, today: str, answer: str) -> InlineKeyboardMarkup:
+def _daily_keyboard(
+    user_id: int,
+    today: str,
+    answer: str,
+    wrong_answer: str,
+) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(
                 text=option,
-                callback_data=f"dailyanswer:{user_id}:{today}:{option}",
+                callback_data=(
+                    f"dailyanswer:{user_id}:{today}:"
+                    f"{'correct' if option == answer else 'wrong'}"
+                ),
             )]
-            for option in _answer_options(answer)
+            for option in _answer_options(answer, wrong_answer)
         ] + [[InlineKeyboardButton(text="⬅️ Back", callback_data="navigation:home")]]
     )
 
@@ -129,6 +419,7 @@ def clear_user_session(user_id: int):
     last_vault.pop(user_id, None)
     question_users.pop(user_id, None)
     current_answers.pop(user_id, None)
+    current_wrong_answers.pop(user_id, None)
     current_tokens.pop(user_id, None)
 
 
@@ -148,6 +439,7 @@ async def handle_answer_for_user(
             awarded, energy = await award_vault_answer(user_id, progress, _today())
             if not awarded:
                 current_answers.pop(user_id, None)
+                current_wrong_answers.pop(user_id, None)
                 current_tokens.pop(user_id, None)
                 await send_screen(
                     message,
@@ -161,6 +453,7 @@ async def handle_answer_for_user(
             vault_users[user_id] = progress
             user_points[user_id] = energy
             current_answers.pop(user_id, None)
+            current_wrong_answers.pop(user_id, None)
             current_tokens.pop(user_id, None)
             if progress >= TOTAL_VAULT_QUESTIONS:
                 await save_vault_state(user_id, _today(), progress, None, None)
@@ -190,6 +483,7 @@ async def handle_answer_for_user(
             return
 
         current_answers.pop(user_id, None)
+        current_wrong_answers.pop(user_id, None)
         current_tokens.pop(user_id, None)
         await send_screen(
             message,
@@ -208,6 +502,7 @@ async def handle_answer_for_user(
             energy = data[2] if data else 0
             user_points[user_id] = energy
             current_answers.pop(user_id, None)
+            current_wrong_answers.pop(user_id, None)
             current_tokens.pop(user_id, None)
             await send_screen(
                 message,
@@ -219,6 +514,7 @@ async def handle_answer_for_user(
             return
 
         current_answers.pop(user_id, None)
+        current_wrong_answers.pop(user_id, None)
         current_tokens.pop(user_id, None)
         await send_screen(
             message,
@@ -235,9 +531,8 @@ async def handle_button_answer(callback: types.CallbackQuery):
         return
 
     try:
-        _, user_id_str, token, answer = callback.data.split(":", 3)
+        _, user_id_str, token, choice = callback.data.split(":", 3)
         user_id = int(user_id_str)
-        selected_answer = answer.strip().casefold()
     except (ValueError, TypeError):
         await callback.answer("Invalid answer.", show_alert=True)
         return
@@ -246,11 +541,17 @@ async def handle_button_answer(callback: types.CallbackQuery):
         callback.from_user.id != user_id
         or user_id not in current_answers
         or current_tokens.get(user_id) != token
+        or choice not in {"correct", "wrong"}
     ):
         await callback.answer("This question is no longer active.", show_alert=True)
         return
 
     await callback.answer()
+    selected_answer = (
+        current_answers[user_id]
+        if choice == "correct"
+        else current_wrong_answers[user_id]
+    )
     await handle_answer_for_user(user_id, callback.from_user, callback.message, selected_answer)
 
 
@@ -287,7 +588,15 @@ async def show_vault(message: types.Message, user: types.User):
                 f"👁️ Oria preserved your trial at {progress + 1}/{TOTAL_VAULT_QUESTIONS}.",
                 artwork="Vault Entrance",
             )
-            await _send_question(message, user_id, question, answer, progress, vault=True)
+            await _send_question(
+                message,
+                user_id,
+                question,
+                answer,
+                _wrong_answer(question),
+                progress,
+                vault=True,
+            )
             return
         await send_screen(
             message,
@@ -323,9 +632,18 @@ async def send_vault_question(
     persist: bool = False,
 ):
     user_id = user_id or msg.from_user.id
-    question, answer = random.choice(QUESTIONS)
+    question, answer, wrong_answer = random.choice(QUESTIONS)
     progress = vault_users.get(user_id, 0)
-    await _send_question(msg, user_id, question, answer, progress, vault=True, persist=persist)
+    await _send_question(
+        msg,
+        user_id,
+        question,
+        answer,
+        wrong_answer,
+        progress,
+        vault=True,
+        persist=persist,
+    )
 
 
 async def _send_question(
@@ -333,12 +651,15 @@ async def _send_question(
     user_id: int,
     question: str,
     answer: str,
+    wrong_answer: str,
     progress: int,
     vault: bool,
     persist: bool = False,
 ):
-    answer = answer.casefold()
-    current_answers[user_id] = answer
+    correct_choice = answer
+    wrong_choice = wrong_answer
+    current_answers[user_id] = correct_choice.casefold()
+    current_wrong_answers[user_id] = wrong_choice.casefold()
     token = secrets.token_hex(3)
     current_tokens[user_id] = token
     if persist and vault:
@@ -359,7 +680,12 @@ async def _send_question(
     await send_screen(
         message,
         text,
-        build_answer_keyboard(user_id, _answer_options(answer), token),
+        build_answer_keyboard(
+            user_id,
+            _answer_options(correct_choice, wrong_choice),
+            token,
+            correct_answer=correct_choice,
+        ),
         artwork,
     )
 
@@ -388,8 +714,8 @@ async def show_trials(message: types.Message, user: types.User):
 
 async def send_question(msg: types.Message, user_id: int | None = None):
     user_id = user_id or msg.from_user.id
-    question, answer = random.choice(QUESTIONS)
-    await _send_question(msg, user_id, question, answer, 0, vault=False)
+    question, answer, wrong_answer = random.choice(QUESTIONS)
+    await _send_question(msg, user_id, question, answer, wrong_answer, 0, vault=False)
 
 
 @router.message(Command("daily"))
@@ -443,7 +769,7 @@ async def handle_daily_action(callback: types.CallbackQuery):
         return
 
     if action == "challenge":
-        question, answer = random.choice(QUESTIONS)
+        question, answer, wrong_answer = random.choice(QUESTIONS)
         status, question, answer = await start_daily_challenge(
             callback.from_user.id, today, question, answer
         )
@@ -460,7 +786,7 @@ async def handle_daily_action(callback: types.CallbackQuery):
             "🧠 DAILY CHALLENGE\n\n"
             "One signal. One answer. +10 Energy on completion.\n"
             f"👁️ Oria presents: {question}",
-            _daily_keyboard(callback.from_user.id, today, answer),
+            _daily_keyboard(callback.from_user.id, today, answer, wrong_answer),
             "Daily Challenge",
         )
         return
@@ -474,16 +800,24 @@ async def handle_daily_answer(callback: types.CallbackQuery):
         await callback.answer("This daily signal is unavailable.", show_alert=True)
         return
     try:
-        _, user_id_text, challenge_date, answer = callback.data.split(":", 3)
+        _, user_id_text, challenge_date, choice = callback.data.split(":", 3)
         user_id = int(user_id_text)
     except (ValueError, TypeError):
+        await callback.answer("Invalid daily answer.", show_alert=True)
+        return
+    if choice not in {"correct", "wrong"}:
         await callback.answer("Invalid daily answer.", show_alert=True)
         return
     if user_id != callback.from_user.id or challenge_date != _today():
         await callback.answer("This daily challenge is no longer active.", show_alert=True)
         return
 
-    correct, energy = await complete_daily_challenge(user_id, challenge_date, answer.casefold())
+    data = await get_user(user_id)
+    if not data or data[15] != challenge_date or not data[17]:
+        await callback.answer("Today's challenge is no longer active.", show_alert=True)
+        return
+    selected_answer = data[17] if choice == "correct" else _wrong_answer(data[16])
+    correct, energy = await complete_daily_challenge(user_id, challenge_date, selected_answer)
     if correct:
         await callback.answer("Daily challenge complete!")
         await show_daily(
