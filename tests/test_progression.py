@@ -36,7 +36,7 @@ class GuardianProgressionTest(unittest.IsolatedAsyncioTestCase):
         data = await db.get_user(101)
         self.assertEqual(data[2], 25)
         self.assertEqual(data[6], 1)
-        self.assertEqual(data[8], "Initiate")
+        self.assertEqual(data[8], "🐾 Guardian")
         self.assertFalse((await db.award_vault_answer(101, 4, "2026-10-02"))[0])
 
     async def test_referral_is_durable_and_awarded_only_once(self):
@@ -86,7 +86,7 @@ class GuardianProgressionTest(unittest.IsolatedAsyncioTestCase):
         guardian = SimpleNamespace(id=606, username="guardian", first_name="Guardian")
         await db.ensure_user(guardian)
         await db.add_points(guardian, 500)
-        self.assertEqual((await db.get_user(606))[8], "Elite Guardian")
+        self.assertEqual((await db.get_user(606))[8], "⭐️ Elite Guardian")
 
         image = Image.open(BytesIO(_make_artwork("Vault Trial")))
         self.assertEqual(image.format, "PNG")
@@ -121,7 +121,7 @@ class GuardianProgressionTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(migrated[2], 800)
         self.assertEqual(migrated[5], 3)
         self.assertEqual(migrated[6], 4)
-        self.assertEqual(migrated[8], "Elite Guardian")
+        self.assertEqual(migrated[8], "⭐️ Elite Guardian")
 
 
 if __name__ == "__main__":

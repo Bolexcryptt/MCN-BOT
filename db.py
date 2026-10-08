@@ -3,11 +3,12 @@ import aiosqlite
 DB_NAME = "data/bot.db"
 
 RANKS = (
-    ("Initiate", 0),
-    ("Guardian 🐾", 100),
-    ("Elite Guardian", 500),
-    ("Royal Guardian", 1500),
-    ("Ambassador 👑", 5000),
+    ("🐾 Guardian", 0),
+    ("🛡️ Royal Guardian", 100),
+    ("⭐️ Elite Guardian", 500),
+    ("📜 Ambassador", 1500),
+    ("💎 Vault Guardian", 5000),
+    ("👑 Legend", 15000),
 )
 
 USER_COLUMNS = {
@@ -19,7 +20,7 @@ USER_COLUMNS = {
     "invites": "INTEGER DEFAULT 0",
     "invite_energy": "INTEGER DEFAULT 0",
     "total_vaults": "INTEGER DEFAULT 0",
-    "rank": "TEXT DEFAULT 'Initiate'",
+    "rank": "TEXT DEFAULT '🐾 Guardian'",
     "daily_streak": "INTEGER DEFAULT 0",
     "last_vault_date": "TEXT",
     "vault_progress": "INTEGER DEFAULT 0",

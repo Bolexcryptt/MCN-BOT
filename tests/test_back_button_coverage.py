@@ -5,7 +5,15 @@ from unittest.mock import AsyncMock, patch
 from aiogram.types import InlineKeyboardMarkup
 
 from handlers import invite, leaderboard, profile, vault
-from handlers.navigation import home_keyboard
+from handlers.navigation import _resolve_asset_path, home_keyboard
+
+
+class AssetMappingTest(unittest.TestCase):
+    def test_key_kingdom_and_vault_artworks_map_to_real_assets(self):
+        self.assertTrue(_resolve_asset_path("Guardian Hub").endswith("kingdom1.png"))
+        self.assertTrue(_resolve_asset_path("Vault Entrance").endswith("thevault.png"))
+        self.assertTrue(_resolve_asset_path("Vault Trial").endswith("vault2.png"))
+        self.assertTrue(_resolve_asset_path("Guardian Trials").endswith("kingdom4.png"))
 
 
 class BackButtonCoverageTest(unittest.IsolatedAsyncioTestCase):
@@ -35,12 +43,13 @@ class BackButtonCoverageTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(
             destinations,
             {
-                "hub:vault",
-                "hub:trials",
-                "hub:profile",
-                "hub:leaderboard",
-                "hub:invite",
-                "hub:daily",
+                "hub:oria",
+                "hub:guardians",
+                "hub:mcn",
+                "hub:live",
+                "hub:verify",
+                "hub:rewards",
+                "hub:lore",
             },
         )
 

@@ -565,7 +565,7 @@ async def show_vault(message: types.Message, user: types.User):
     user_id = user.id
     today = _today()
     data = await get_user(user_id)
-    guardian_rank = data[8] if data and len(data) > 8 else "Initiate"
+    guardian_rank = data[8] if data and len(data) > 8 else "🐾 Guardian"
     if data and data[10] == today:
         progress = data[11] or 0
         if progress >= TOTAL_VAULT_QUESTIONS:
@@ -729,7 +729,7 @@ async def show_daily(message: types.Message, user: types.User, notice: str | Non
     streak = data[9] if data and data[9] else 0
     text = (
         "🔥 GUARDIAN DAILY ACTIVITY\n\n"
-        f"🛡️ Current rank: {data[8] if data and len(data) > 8 else 'Initiate'}\n"
+        f"🛡️ Current rank: {data[8] if data and len(data) > 8 else '🐾 Guardian'}\n"
         "Defend the Vault each day to build your streak.\n"
         "⚡ Daily Guardian bonus: +5 Energy\n"
         "🎯 Daily challenge: +10 Energy\n"
