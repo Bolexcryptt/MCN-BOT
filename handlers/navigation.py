@@ -62,6 +62,7 @@ def home_keyboard() -> InlineKeyboardMarkup:
             [InlineKeyboardButton(text="📊 Track the Token", callback_data="hub:live")],
             [InlineKeyboardButton(text="🏆 Community & Rewards", callback_data="hub:rewards")],
             [InlineKeyboardButton(text="📜 Discover the Lore", callback_data="hub:lore")],
+            [InlineKeyboardButton(text="👑 RANKS & LEADERBOARD", callback_data="hub:leaderboard")],
         ]
     )
 
@@ -198,6 +199,7 @@ def _guardian_activity_keyboard() -> InlineKeyboardMarkup:
         inline_keyboard=[
             [InlineKeyboardButton(text="🏛️ ENTER THE VAULT · +5 ENERGY/ANSWER", callback_data="hub:vault")],
             [InlineKeyboardButton(text="⚔️ UNLIMITED TRIALS · +1 ENERGY/ANSWER", callback_data="hub:trials")],
+            [InlineKeyboardButton(text="👑 RANKS & LEADERBOARD", callback_data="hub:leaderboard")],
             [InlineKeyboardButton(text="👤 GUARDIAN PROFILE", callback_data="hub:profile")],
             [InlineKeyboardButton(text="🏠 KINGDOM HOME", callback_data="navigation:home")],
         ]
@@ -267,7 +269,7 @@ async def show_guardians_screen(message: types.Message, user: types.User | None 
 async def show_mcn_screen(message: types.Message, user: types.User | None = None):
     await send_screen(
         message,
-        "💎 MCN",
+        "💎 MCN\n\n"
         "MCN is the identity of the Kingdom and the base of its economy and culture.\n\n"
         "MCN is designed to move with utility, community, and long-term trust.\n\n"
         "This portal brings the token story and the Kingdom story together in one place.",
@@ -366,7 +368,7 @@ async def show_security_screen(message: types.Message, user: types.User | None =
 async def show_rewards_screen(message: types.Message, user: types.User | None = None):
     await send_screen(
         message,
-        "🏆 COMMUNITY & REWARDS",
+        "🏆 COMMUNITY & REWARDS\n\n"
         "🔥 Current contests\n"
         "🎁 Current rewards\n"
         "🏅 Previous winners\n"
@@ -382,6 +384,7 @@ async def show_rewards_screen(message: types.Message, user: types.User | None = 
         "• draw and winner publication",
         InlineKeyboardMarkup(
             inline_keyboard=[
+                [InlineKeyboardButton(text="👑 RANKS & LEADERBOARD", callback_data="hub:leaderboard")],
                 [InlineKeyboardButton(text="🎖️ GUARDIAN PROFILE", callback_data="hub:profile")],
                 [InlineKeyboardButton(text="🧲 INVITE A GUARDIAN", callback_data="hub:invite")],
                 [InlineKeyboardButton(text="🏠 KINGDOM HOME", callback_data="navigation:home")],

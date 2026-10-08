@@ -50,6 +50,7 @@ class BackButtonCoverageTest(unittest.IsolatedAsyncioTestCase):
                 "hub:verify",
                 "hub:rewards",
                 "hub:lore",
+                "hub:leaderboard",
             },
         )
 
@@ -129,6 +130,38 @@ class BackButtonCoverageTest(unittest.IsolatedAsyncioTestCase):
         }
         self.assertIn("hub:vault", callbacks)
         self.assertIn("hub:trials", callbacks)
+        self.assertIn("hub:leaderboard", callbacks)
+
+    async def test_mcn_screen_renders_site_and_verify_buttons(self):
+        message = self.make_message()
+        await navigation.show_mcn_screen(message, message.from_user)
+
+        text, options = message.sent[-1]
+        self.assertIn("💎 MCN", text[0])
+        buttons = [
+            button
+            for row in options["reply_markup"].inline_keyboard
+            for button in row
+        ]
+        self.assertTrue(any(button.url == "https://mainecoonmcn.vercel.app/" for button in buttons))
+        self.assertIn("hub:verify", {button.callback_data for button in buttons})
+
+    async def test_rewards_screen_renders_leaderboard_profile_and_invite_buttons(self):
+        message = self.make_message()
+        await navigation.show_rewards_screen(message, message.from_user)
+
+        text, options = message.sent[-1]
+        self.assertIn("COMMUNITY & REWARDS", text[0])
+        buttons = [
+            button
+            for row in options["reply_markup"].inline_keyboard
+            for button in row
+        ]
+        callbacks = {button.callback_data for button in buttons}
+        self.assertIn("hub:leaderboard", callbacks)
+        self.assertIn("hub:profile", callbacks)
+        self.assertIn("hub:invite", callbacks)
+
 
     async def test_verify_screen_shows_contract_lock_date_and_explorer_links(self):
         message = self.make_message()
@@ -186,6 +219,27 @@ class BackButtonCoverageTest(unittest.IsolatedAsyncioTestCase):
 
         show_vault.assert_awaited_once_with(message, message.from_user)
         show_trials.assert_awaited_once_with(message, message.from_user)
+
+    async def test_mcn_rewards_and_leaderboard_buttons_dispatch(self):
+        message = self.make_message()
+        callback = SimpleNamespace(
+            message=message,
+            data="hub:mcn",
+            from_user=message.from_user,
+            answer=AsyncMock(),
+        )
+        with patch.object(navigation, "show_mcn_screen", new_callable=AsyncMock) as show_mcn, \
+             patch.object(navigation, "show_rewards_screen", new_callable=AsyncMock) as show_rewards, \
+             patch("handlers.leaderboard.show_leaderboard", new_callable=AsyncMock) as show_leaderboard:
+            await navigation.open_hub_section(callback)
+            callback.data = "hub:rewards"
+            await navigation.open_hub_section(callback)
+            callback.data = "hub:leaderboard"
+            await navigation.open_hub_section(callback)
+
+        show_mcn.assert_awaited_once_with(message, message.from_user)
+        show_rewards.assert_awaited_once_with(message, message.from_user)
+        show_leaderboard.assert_awaited_once_with(message, message.from_user)
 
 
 if __name__ == "__main__":
