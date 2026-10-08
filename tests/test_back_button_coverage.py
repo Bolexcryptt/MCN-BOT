@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, patch
 
 from aiogram.types import InlineKeyboardMarkup
 
-from handlers import invite, leaderboard, profile, vault
+from handlers import invite, leaderboard, navigation, profile, vault
 from handlers.navigation import _resolve_asset_path, home_keyboard
 
 
@@ -94,6 +94,41 @@ class BackButtonCoverageTest(unittest.IsolatedAsyncioTestCase):
             vault.build_answer_keyboard(42, ["answer", "wrong"]).inline_keyboard[-1][0].text,
             "⬅️ Back",
         )
+
+    async def test_guardians_screen_links_to_energy_earning_vault_and_trials(self):
+        message = self.make_message()
+        await navigation.show_guardians_screen(message, message.from_user)
+
+        text = message.sent[-1][0][0]
+        self.assertIn("5 questions, +5 Energy", text)
+        self.assertIn("Unlimited Trials", text)
+        keyboard = message.sent[-1][1]["reply_markup"]
+        callbacks = {
+            button.callback_data
+            for row in keyboard.inline_keyboard
+            for button in row
+        }
+        self.assertIn("hub:vault", callbacks)
+        self.assertIn("hub:trials", callbacks)
+
+    async def test_vault_and_trials_buttons_dispatch_to_question_flows(self):
+        message = self.make_message()
+        callback = SimpleNamespace(
+            message=message,
+            data="hub:vault",
+            from_user=message.from_user,
+            answer=AsyncMock(),
+        )
+        with (
+            patch("handlers.vault.show_vault", new_callable=AsyncMock) as show_vault,
+            patch("handlers.vault.show_trials", new_callable=AsyncMock) as show_trials,
+        ):
+            await navigation.open_hub_section(callback)
+            callback.data = "hub:trials"
+            await navigation.open_hub_section(callback)
+
+        show_vault.assert_awaited_once_with(message, message.from_user)
+        show_trials.assert_awaited_once_with(message, message.from_user)
 
 
 if __name__ == "__main__":

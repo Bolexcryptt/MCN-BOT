@@ -188,6 +188,17 @@ def _portal_home_link_keyboard() -> InlineKeyboardMarkup:
     )
 
 
+def _guardian_activity_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="🏛️ ENTER THE VAULT · +5 ENERGY/ANSWER", callback_data="hub:vault")],
+            [InlineKeyboardButton(text="⚔️ UNLIMITED TRIALS · +1 ENERGY/ANSWER", callback_data="hub:trials")],
+            [InlineKeyboardButton(text="👤 GUARDIAN PROFILE", callback_data="hub:profile")],
+            [InlineKeyboardButton(text="🏠 KINGDOM HOME", callback_data="navigation:home")],
+        ]
+    )
+
+
 async def _send_portal_info(message: types.Message, title: str, body: str, artwork: str = "Guardian Hub"):
     await send_screen(message, f"{title}\n\n{body}", _portal_home_link_keyboard(), artwork)
 
@@ -227,9 +238,9 @@ async def show_oria_screen(message: types.Message, user: types.User | None = Non
 
 
 async def show_guardians_screen(message: types.Message, user: types.User | None = None):
-    await _send_portal_info(
+    await send_screen(
         message,
-        "🐾 GUARDIANS",
+        "🐾 GUARDIANS\n\n"
         "The MCN Kingdom is built by Guardians who protect, grow, and represent the mission.\n\n"
         "Rank system:\n"
         "🐾 Guardian\n"
@@ -238,7 +249,12 @@ async def show_guardians_screen(message: types.Message, user: types.User | None 
         "📜 Ambassador\n"
         "💎 Vault Guardian\n"
         "👑 Legend\n\n"
-        "Every Guardian is part of the Kingdom's story and progression.",
+        "Every Guardian is part of the Kingdom's story and progression.\n\n"
+        "Earn Energy by answering questions:\n"
+        "🏛️ Daily Vault: 5 questions, +5 Energy for each correct answer.\n"
+        "⚔️ Unlimited Trials: keep answering for +1 Energy per correct answer.\n"
+        "Your Energy raises your Guardian rank.",
+        _guardian_activity_keyboard(),
         "Guardians",
     )
 
