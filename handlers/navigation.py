@@ -187,6 +187,7 @@ async def send_screen(
 def _portal_home_link_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
+            [InlineKeyboardButton(text="🌐 OFFICIAL LINKS", callback_data="hub:links")],
             [InlineKeyboardButton(text="🏠 KINGDOM HOME", callback_data="navigation:home")],
         ]
     )
@@ -264,12 +265,20 @@ async def show_guardians_screen(message: types.Message, user: types.User | None 
 
 
 async def show_mcn_screen(message: types.Message, user: types.User | None = None):
-    await _send_portal_info(
+    await send_screen(
         message,
         "💎 MCN",
         "MCN is the identity of the Kingdom and the base of its economy and culture.\n\n"
         "MCN is designed to move with utility, community, and long-term trust.\n\n"
         "This portal brings the token story and the Kingdom story together in one place.",
+        InlineKeyboardMarkup(
+            inline_keyboard=[
+                [InlineKeyboardButton(text="🌐 Visit the MCN Website", url="https://mainecoonmcn.vercel.app/")],
+                [InlineKeyboardButton(text="🔐 Verify MCN", callback_data="hub:verify")],
+                [InlineKeyboardButton(text="🌐 All Official Links", callback_data="hub:links")],
+                [InlineKeyboardButton(text="🏠 KINGDOM HOME", callback_data="navigation:home")],
+            ]
+        ),
         "mcn kingdom",
     )
 
@@ -328,22 +337,34 @@ async def show_verify_screen(message: types.Message, user: types.User | None = N
 
 
 async def show_security_screen(message: types.Message, user: types.User | None = None):
-    await _send_portal_info(
+    await send_screen(
         message,
         "🛡️ STAY SAFE",
-        "How to identify the official MCN\n"
-        "How to verify the contract\n"
-        "Official links\n"
-        "Official social accounts\n"
-        "How to avoid fake MCN tokens\n"
-        "How to avoid fake admins\n\n"
-        "Never trust a copycat contract or admin request without verifying official sources.",
+        "How to identify official MCN:\n"
+        "• Start from the MCN website and use its official links.\n"
+        "• Confirm the token address on BaseScan: 0x8e627241838b660cc90f96601952dcd7f47b7831.\n"
+        "• Check the network is Base and compare addresses character by character.\n"
+        "• Verify the liquidity locker through the official locker record.\n"
+        "• MetaMask is a wallet for interacting with Base, not a token listing.\n\n"
+        "Avoid fake tokens and admins:\n"
+        "• Never trust a token name, logo, unsolicited DM or search result alone.\n"
+        "• Do not share seed phrases, private keys or send funds to an admin.\n"
+        "• Ignore urgent investment promises; verify through official community links.\n\n"
+        "Use Official Links to open the website and independent explorers.",
+        InlineKeyboardMarkup(
+            inline_keyboard=[
+                [InlineKeyboardButton(text="🌐 Visit MCN Website", url="https://mainecoonmcn.vercel.app/")],
+                [InlineKeyboardButton(text="🔐 Verify Contract", callback_data="hub:verify")],
+                [InlineKeyboardButton(text="🌐 Official Links", callback_data="hub:links")],
+                [InlineKeyboardButton(text="🏠 KINGDOM HOME", callback_data="navigation:home")],
+            ]
+        ),
         "Guardians",
     )
 
 
 async def show_rewards_screen(message: types.Message, user: types.User | None = None):
-    await _send_portal_info(
+    await send_screen(
         message,
         "🏆 COMMUNITY & REWARDS",
         "🔥 Current contests\n"
@@ -351,13 +372,21 @@ async def show_rewards_screen(message: types.Message, user: types.User | None = 
         "🏅 Previous winners\n"
         "🎟️ How to participate\n"
         "📜 Contest rules\n\n"
-        "Contest flow can include:\n"
+        "No active on-chain holding contest is configured in the bot yet. When announced, verify its rules and official post before connecting a wallet.\n\n"
+        "Planned contest flow:\n"
         "• registration\n"
-        "• wallet check\n"
-        "• MCN minimum verification\n"
+        "• wallet address submission (never share keys)\n"
+        "• on-chain minimum MCN verification\n"
         "• holding period\n"
         "• participant count\n"
         "• draw and winner publication",
+        InlineKeyboardMarkup(
+            inline_keyboard=[
+                [InlineKeyboardButton(text="🎖️ GUARDIAN PROFILE", callback_data="hub:profile")],
+                [InlineKeyboardButton(text="🧲 INVITE A GUARDIAN", callback_data="hub:invite")],
+                [InlineKeyboardButton(text="🏠 KINGDOM HOME", callback_data="navigation:home")],
+            ]
+        ),
         "mcn kingdom",
     )
 
@@ -388,6 +417,8 @@ async def show_links_screen(message: types.Message, user: types.User | None = No
             [InlineKeyboardButton(text="DEXTools", url="https://www.dextools.io/app/base/pair-explorer/0xc3688a53e99af856fac2a43bd470eb7dd1b0668f")],
             [InlineKeyboardButton(text="BaseScan", url="https://basescan.org/token/0x8e627241838b660cc90f96601952dcd7f47b7831")],
             [InlineKeyboardButton(text="Lock Liquidity", url="https://app.uncx.network/lockers/manage/lockers-v3?service=edit&chain=8453&wallet=0x636c3ea0763b55912ad5bf5b2acc6629c9148ee0&locker=0x231278edd38b00b07fbd52120cef685b9baebcc1&pool=0xaa64742981c606881c458e7d5cb8b108e4b60eb8&lock=1156&index=0")],
+            [InlineKeyboardButton(text="🛡️ Anti-scam safety", callback_data="hub:security")],
+            [InlineKeyboardButton(text="🔐 Verify MCN", callback_data="hub:verify")],
             *back_keyboard().inline_keyboard,
         ]
     )
@@ -417,6 +448,21 @@ async def open_verify(message: types.Message):
 @router.message(Command("lore"))
 async def open_lore(message: types.Message):
     await show_lore_screen(message, message.from_user)
+
+
+@router.message(Command("links"))
+async def open_links(message: types.Message):
+    await show_links_screen(message, message.from_user)
+
+
+@router.message(Command("security"))
+async def open_security(message: types.Message):
+    await show_security_screen(message, message.from_user)
+
+
+@router.message(Command("buy"))
+async def open_buy_guide(message: types.Message):
+    await show_verify_screen(message, message.from_user)
 
 
 @router.callback_query(F.data == "navigation:home")

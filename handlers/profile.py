@@ -42,14 +42,17 @@ async def show_profile(message: types.Message, user: types.User):
         progress_text = f"Progress toward {rank_for_energy(next_threshold)[0]}"
 
     text = (
-        "👤 GUARDIAN PROFILE\n\n"
-        f"{display_name}\n\n"
-        f"🛡️ Rank\n{rank}\n\n"
-        f"⚡ Energy\n{energy:,}\n\n"
-        f"🏛️ Vaults Completed\n{vaults}\n\n"
-        f"👥 Guardians Invited\n{invites}\n\n"
+        "🎖️ GUARDIAN PROFILE\n\n"
+        f"{'Username' if data[1] else 'Name'}: {display_name}\n\n"
+        f"🛡️ Rank: {rank}\n"
+        f"📅 Joined: {data[18] if len(data) > 18 and data[18] else 'Legacy member'}\n"
+        f"✨ Guardian XP: {energy:,}\n\n"
+        "📊 Community activity\n"
+        f"🏛️ Vaults completed: {vaults}\n"
+        f"👥 Guardians invited: {invites}\n"
+        f"🔥 Daily streak: {data[9] if len(data) > 9 and data[9] else 0} days\n\n"
         "━━━━━━━━━━━━━━━━━━\n\n"
         f"{progress_text}\n{progress_bar}\n\n"
-        f"🔥 Daily streak: {data[9] if len(data) > 9 and data[9] else 0} days"
+        "Earn XP through Vault trials, unlimited questions, daily activity and referrals."
     )
     await send_screen(message, text, back_keyboard(), "Guardian Profile")

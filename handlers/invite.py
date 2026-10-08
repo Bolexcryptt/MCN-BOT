@@ -1,3 +1,5 @@
+from urllib.parse import urlencode
+
 from aiogram import types, Router
 from aiogram.filters import Command
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
@@ -17,10 +19,12 @@ async def show_invite(message: types.Message, user: types.User):
     await ensure_user(user)
     bot = await message.bot.get_me()
     link = f"https://t.me/{bot.username}?start={user.id}"
+    share_link = f"https://t.me/share/url?{urlencode({'url': link, 'text': 'Join me in the MCN Kingdom!'})}"
     recruits, energy = await get_invite_stats(user.id)
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="🧲 INVITE GUARDIAN", url=link)],
+            [InlineKeyboardButton(text="🧲 OPEN YOUR INVITE LINK", url=link)],
+            [InlineKeyboardButton(text="📨 SHARE INVITE LINK", url=share_link)],
             *back_keyboard().inline_keyboard,
         ]
     )
@@ -30,6 +34,8 @@ async def show_invite(message: types.Message, user: types.User):
         f"👥 Guardians recruited: {recruits}\n"
         f"⚡ Energy earned from recruitment: +{energy}\n\n"
         "━━━━━━━━━━━━━━━━━━\n\n"
-        "Your recruitment link is ready. Each new Guardian can be counted once."
+        "Copy or forward this personal link to invite a Guardian:\n"
+        f"{link}\n\n"
+        "Each new Guardian can be counted once."
     )
     await send_screen(message, text, keyboard, "Guardian Recruitment")

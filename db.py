@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 import aiosqlite
 
 DB_NAME = "data/bot.db"
@@ -30,6 +32,7 @@ USER_COLUMNS = {
     "daily_challenge_date": "TEXT",
     "daily_challenge_question": "TEXT",
     "daily_challenge_answer": "TEXT",
+    "joined_at": "TEXT",
 }
 
 
@@ -79,14 +82,15 @@ async def init_db():
 async def ensure_user(user):
     username = user.username
     first_name = user.first_name or username or "Guardian"
+    joined_at = datetime.now(timezone.utc).date().isoformat()
     async with aiosqlite.connect(DB_NAME) as db:
         await db.execute("""
-        INSERT INTO users (user_id, username, first_name, points, last_checkin, daily_defend_count, invites, total_vaults, rank)
-        VALUES (?, ?, ?, 0, NULL, 0, 0, 0, ?)
+        INSERT INTO users (user_id, username, first_name, points, last_checkin, daily_defend_count, invites, total_vaults, rank, joined_at)
+        VALUES (?, ?, ?, 0, NULL, 0, 0, 0, ?, ?)
         ON CONFLICT(user_id) DO UPDATE SET
             username = excluded.username,
             first_name = excluded.first_name
-        """, (user.id, username, first_name, RANKS[0][0]))
+        """, (user.id, username, first_name, RANKS[0][0], joined_at))
         cursor = await db.execute("SELECT points FROM users WHERE user_id = ?", (user.id,))
         await _update_rank(db, user.id, (await cursor.fetchone())[0])
         await db.commit()
@@ -114,7 +118,7 @@ async def get_user(user_id):
                       invites, total_vaults, first_name, rank, daily_streak,
                       last_vault_date, vault_progress, vault_question, vault_answer,
                       last_challenge_date, daily_challenge_date,
-                      daily_challenge_question, daily_challenge_answer
+                      daily_challenge_question, daily_challenge_answer, joined_at
                FROM users WHERE user_id = ?""",
             (user_id,),
         )
@@ -151,9 +155,11 @@ async def record_referral(invited_id: int, inviter_id: int, created_at: str) -> 
             return False
 
         await db.execute(
-            """INSERT INTO users (user_id, username, first_name, points, invites, total_vaults, rank)
-               VALUES (?, 'Guardian', 'Guardian', 0, 0, 0, ?) ON CONFLICT(user_id) DO NOTHING""",
-            (inviter_id, RANKS[0][0]),
+            """INSERT INTO users
+               (user_id, username, first_name, points, invites, total_vaults, rank, joined_at)
+               VALUES (?, 'Guardian', 'Guardian', 0, 0, 0, ?, ?)
+               ON CONFLICT(user_id) DO NOTHING""",
+            (inviter_id, RANKS[0][0], created_at),
         )
         await db.execute(
             "INSERT INTO referrals (invited_id, inviter_id, created_at) VALUES (?, ?, ?)",

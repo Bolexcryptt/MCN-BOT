@@ -85,6 +85,7 @@ class GuardianProgressionTest(unittest.IsolatedAsyncioTestCase):
     async def test_rank_updates_and_generated_art_is_telegram_ready_png(self):
         guardian = SimpleNamespace(id=606, username="guardian", first_name="Guardian")
         await db.ensure_user(guardian)
+        self.assertIsNotNone((await db.get_user(606))[18])
         await db.add_points(guardian, 500)
         self.assertEqual((await db.get_user(606))[8], "⭐️ Elite Guardian")
 
