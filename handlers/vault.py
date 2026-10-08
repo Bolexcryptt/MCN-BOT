@@ -321,6 +321,141 @@ QUESTIONS = [
         "Protect its stronghold and help it grow",
         "Guard your title and leave it unchanged",
     ),
+    (
+        "💎 What is MCN in the story of the Kingdom?",
+        "A token and community identity",
+        "A centralized bank account",
+    ),
+    (
+        "👁️ Who is Oria in the MCN Kingdom?",
+        "The Kingdom's watchful guide",
+        "The owner of every Guardian",
+    ),
+    (
+        "🐾 What is a Guardian's core role in the Kingdom?",
+        "Serve, build and defend",
+        "Rule without serving others",
+    ),
+    (
+        "🛡️ What marks the Royal Guardian role?",
+        "Trusted service and progression",
+        "A role bought with tokens",
+    ),
+    (
+        "⭐️ What distinguishes an Elite Guardian?",
+        "Advanced service and commitment",
+        "A separate token contract",
+    ),
+    (
+        "📜 What is an Ambassador's role in MCN?",
+        "Represent MCN and its community",
+        "Control every Guardian's wallet",
+    ),
+    (
+        "👑 How should the Guardian ranks be understood?",
+        "Community roles in the MCN journey",
+        "Guaranteed financial returns",
+    ),
+    (
+        "💎 What is MCN's stated total supply?",
+        "1 billion MCN, fixed supply",
+        "A supply that can be minted",
+    ),
+    (
+        "🔐 Can new MCN tokens be minted?",
+        "No, the project states no mint",
+        "Yes, the owner can mint more",
+    ),
+    (
+        "💸 What is the stated MCN transaction tax?",
+        "0% tax",
+        "A 5% buy and sell tax",
+    ),
+    (
+        "🚀 How was MCN launched, according to the project?",
+        "Fair launch, no presale",
+        "Private presale for insiders",
+    ),
+    (
+        "🛡️ Were team tokens set aside for MCN?",
+        "No team tokens, per project info",
+        "A large team-token allocation",
+    ),
+    (
+        "🚫 Does the MCN contract have a blacklist?",
+        "No blacklist, per project info",
+        "An owner-managed blacklist",
+    ),
+    (
+        "⏸️ Can an owner pause MCN transfers?",
+        "No pause function, per project info",
+        "The owner can pause transfers",
+    ),
+    (
+        "🔐 What does renounced ownership mean here?",
+        "The owner control was renounced",
+        "The owner can change all rules",
+    ),
+    (
+        "🔵 Which network is MCN built on?",
+        "Base",
+        "Ethereum mainnet",
+    ),
+    (
+        "🏦 Until when is the MCN liquidity lock stated?",
+        "August 10, 2027",
+        "August 10, 2026",
+    ),
+    (
+        "🔎 How can a Guardian check the liquidity lock?",
+        "Verify the locker record on-chain",
+        "Trust an unsourced chat message",
+    ),
+    (
+        "🔐 Where should a Guardian find MCN's official contract?",
+        "Use official links and BaseScan",
+        "Copy an address from a stranger",
+    ),
+    (
+        "📊 How should a Guardian verify the MCN token on-chain?",
+        "Check its contract on BaseScan",
+        "Rely on a token name search",
+    ),
+    (
+        "📈 Where can Guardians track MCN market activity?",
+        "GeckoTerminal and DEX tools",
+        "A wallet's contact list",
+    ),
+    (
+        "👛 What is MetaMask used for with MCN?",
+        "A wallet to use on Base",
+        "A token listing website",
+    ),
+    (
+        "🔄 What is a safe first step to buy MCN on Base?",
+        "Get ETH on Base, then verify",
+        "Send funds to a chat admin",
+    ),
+    (
+        "🛒 Before swapping for MCN, what should a buyer confirm?",
+        "The official contract and network",
+        "Only the token's displayed name",
+    ),
+    (
+        "🛡️ How can a Guardian avoid a fake MCN token?",
+        "Match the address to official links",
+        "Choose the first search result",
+    ),
+    (
+        "🚨 How should a Guardian handle a message from a fake admin?",
+        "Verify via official community links",
+        "Share wallet keys to confirm",
+    ),
+    (
+        "🔍 After an MCN transaction, where can it be checked?",
+        "Open its transaction on BaseScan",
+        "Wait for a stranger to confirm",
+    ),
 ]
 
 vault_users: dict[int, int] = {}
@@ -355,6 +490,23 @@ def _wrong_answer(question: str) -> str:
         if prompt == question:
             return wrong
     raise ValueError(f"Question is not in the Guardian trial collection: {question!r}")
+
+
+def _question_artwork(question: str) -> str:
+    prompt = question.casefold()
+    if "royal guardian" in prompt:
+        return "Royal Guardian"
+    if "elite guardian" in prompt:
+        return "Elite Guardian"
+    if "ambassador" in prompt:
+        return "Ambassador"
+    if "oria" in prompt:
+        return "Oria"
+    if any(term in prompt for term in ("mcn", "token", "supply", "mint", "tax", "contract")):
+        return "MCN Question"
+    if any(term in prompt for term in ("base", "liquidity", "lock", "metamask", "swap")):
+        return "Base Question"
+    return "Guardian Trial"
 
 
 def _answer_options(answer: str, wrong_answer: str) -> list[str]:
@@ -672,10 +824,10 @@ async def _send_question(
             f"{question}\n\n"
             "Choose your response. Your progress is preserved."
         )
-        artwork = "Vault Trial"
+        artwork = _question_artwork(question)
     else:
         text = f"{_category(question, answer)}\n\n👁️ Oria is watching.\n\n{question}"
-        artwork = "Guardian Trial"
+        artwork = _question_artwork(question)
 
     await send_screen(
         message,

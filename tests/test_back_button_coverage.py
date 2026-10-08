@@ -111,6 +111,22 @@ class BackButtonCoverageTest(unittest.IsolatedAsyncioTestCase):
         self.assertIn("hub:vault", callbacks)
         self.assertIn("hub:trials", callbacks)
 
+    async def test_verify_screen_shows_contract_lock_date_and_explorer_links(self):
+        message = self.make_message()
+        await navigation.show_verify_screen(message, message.from_user)
+
+        text = message.sent[-1][0][0]
+        self.assertIn("0x8e627241838b660cc90f96601952dcd7f47b7831", text)
+        self.assertIn("August 10, 2027", text)
+        self.assertIn("not a live guarantee", text)
+        buttons = [
+            button
+            for row in message.sent[-1][1]["reply_markup"].inline_keyboard
+            for button in row
+        ]
+        self.assertTrue(any(button.url and "basescan.org/token/" in button.url for button in buttons))
+        self.assertTrue(any(button.url and "uncx.network/lockers/" in button.url for button in buttons))
+
     async def test_vault_and_trials_buttons_dispatch_to_question_flows(self):
         message = self.make_message()
         callback = SimpleNamespace(

@@ -23,12 +23,16 @@ _ARTWORK_ASSET_MAP = {
     "vault signal": ("oria.png", "thevault.png", "vault2.png"),
     "guardian trial": ("kingdom3.png", "kingdom4.png", "kingdom2.png"),
     "guardian trials": ("kingdom4.png", "kingdom3.png", "kingdom2.png"),
+    "royal guardian": ("royalguardians.png", "kingdom4.png"),
+    "elite guardian": ("eliteguardians.png", "kingdom3.png"),
+    "ambassador": ("ambassador.png", "royalguardians.png", "mcnlogo.png"),
+    "mcn question": ("mcntoken.png", "mcnlogo.png", "kingdom3.png"),
+    "base question": ("kingdom4.png", "mcnlogo.png", "mcntoken.png"),
     "daily guardian activity": ("kingdom3.png", "kingdom4.png", "kingdom2.png"),
     "guardian recruitment": ("mcnlogo.png", "mcntoken.png", "ambassador.png"),
     "mcn kingdom": ("mcnlogo.png", "mcntoken.png", "ambassador.png"),
     "oria": ("oria.png", "kingdom3.png", "kingdom4.png"),
     "guardians": ("guardians.png", "eliteguardians.png", "royalguardians.png"),
-    "ambassador": ("ambassador.png", "royalguardians.png", "mcnlogo.png"),
     "rank progression": ("royalguardians.png", "eliteguardians.png", "ambassador.png"),
 }
 
@@ -286,15 +290,30 @@ async def show_live_data_screen(message: types.Message, user: types.User | None 
 
 
 async def show_verify_screen(message: types.Message, user: types.User | None = None):
-    await _send_portal_info(
+    verify_links = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(
+                text="🔎 Verify token on BaseScan",
+                url="https://basescan.org/token/0x8e627241838b660cc90f96601952dcd7f47b7831",
+            )],
+            [InlineKeyboardButton(
+                text="🔒 Check liquidity lock",
+                url="https://app.uncx.network/lockers/manage/lockers-v3?service=edit&chain=8453&wallet=0x636c3ea0763b55912ad5bf5b2acc6629c9148ee0&locker=0x231278edd38b00b07fbd52120cef685b9baebcc1&pool=0xaa64742981c606881c458e7d5cb8b108e4b60eb8&lock=1156&index=0",
+            )],
+            *back_keyboard().inline_keyboard,
+        ]
+    )
+    await send_screen(
         message,
-        "🔐 VERIFY MCN",
-        "Official contract:\n0x...\n\n"
+        "🔐 VERIFY MCN\n\n"
+        "Official contract:\n0x8e627241838b660cc90f96601952dcd7f47b7831\n\n"
         "Network: Base\n"
-        "Supply: 1,000,000,000 MCN\n"
+        "Fixed total supply: 1,000,000,000 MCN\n"
         "Tax: 0%\n"
-        "Liquidity: 🔒 Locked\n"
-        "Ownership: Renounced\n\n"
+        "Project-stated features: no presale, no team tokens, no mint, no blacklist, no pause function.\n"
+        "Ownership: Renounced (project-stated)\n"
+        "Liquidity lock: stated through August 10, 2027\n\n"
+        "Use the buttons to inspect the token contract and locker record yourself. These links let you verify the records; they are not a live guarantee that a status has not changed.\n\n"
         "How to buy MCN:\n"
         "1. Get ETH on Base\n"
         "2. Connect your wallet\n"
@@ -303,6 +322,7 @@ async def show_verify_screen(message: types.Message, user: types.User | None = N
         "5. Verify the official contract\n"
         "6. Swap\n\n"
         "Use official links and confirm contract and liquidity before buying.",
+        verify_links,
         "mcn kingdom",
     )
 

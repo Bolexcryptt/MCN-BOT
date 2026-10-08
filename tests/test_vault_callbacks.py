@@ -2,7 +2,7 @@ import asyncio
 import unittest
 
 from handlers import vault
-from handlers.navigation import back_keyboard
+from handlers.navigation import _resolve_asset_path, back_keyboard
 
 
 class VaultCallbackButtonTest(unittest.TestCase):
@@ -47,7 +47,10 @@ class VaultCallbackButtonTest(unittest.TestCase):
         for question, correct, wrong in vault.QUESTIONS:
             with self.subTest(question=question):
                 self.assertTrue(any(term in question.casefold() for term in (
-                    "oria", "guardian", "vault", "kingdom", "ambassador", "energy"
+                    "oria", "guardian", "vault", "kingdom", "ambassador", "energy",
+                    "mcn", "base", "token", "liquidity", "metamask", "contract",
+                    "supply", "mint", "tax", "ownership", "launch", "transfers",
+                    "buy", "buyer", "wallet", "admin", "role",
                 )))
                 self.assertNotEqual(correct.casefold(), wrong.casefold())
                 self.assertLessEqual(abs(len(correct) - len(wrong)), 20)
@@ -81,9 +84,23 @@ class VaultCallbackButtonTest(unittest.TestCase):
                 )
 
         prompts = "\n".join(question for question, _, _ in vault.QUESTIONS)
+        question_content = "\n".join(" ".join(entry) for entry in vault.QUESTIONS).casefold()
         self.assertNotIn("2 + 2", prompts)
         self.assertNotIn("5 + 3", prompts)
         self.assertNotIn("10 - 4", prompts)
+        for topic in (
+            "fixed supply", "no mint", "0% tax", "no presale",
+            "team tokens", "blacklist", "pause function", "renounced",
+            "base", "liquidity lock", "official contract", "metamask",
+            "fake mc",
+        ):
+            with self.subTest(topic=topic):
+                self.assertIn(topic, question_content)
+
+    def test_question_topics_select_their_guardian_visual_assets(self):
+        self.assertTrue(_resolve_asset_path(vault._question_artwork("Royal Guardian role")).endswith("royalguardians.png"))
+        self.assertTrue(_resolve_asset_path(vault._question_artwork("Elite Guardian role")).endswith("eliteguardians.png"))
+        self.assertTrue(_resolve_asset_path(vault._question_artwork("Ambassador role")).endswith("ambassador.png"))
 
 
 if __name__ == "__main__":
