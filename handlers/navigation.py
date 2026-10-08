@@ -48,6 +48,18 @@ HOME_TEXT = (
     "📜 Discover the Lore"
 )
 
+HOLD_CONTEST_TEXT = (
+    "🐾 The MCN Hold Contest is back.\n\n"
+    "Hold at least $10 of MCN on Base and you’re in.\n\n"
+    "5 winners will be selected every week.\n"
+    "Each winner receives $5 worth of ETH.\n\n"
+    "1️⃣ Follow @MCN_MAINECOON\n"
+    "2️⃣ Follow @KingStanny\n"
+    "3️⃣ Buy & hold at least $10 of $MCN\n\n"
+    "The Vault is open.\n"
+    "Oria is watching. 👀"
+)
+
 _ART_CACHE: dict[str, bytes] = {}
 
 
@@ -63,6 +75,7 @@ def home_keyboard() -> InlineKeyboardMarkup:
             [InlineKeyboardButton(text="🏆 Community & Rewards", callback_data="hub:rewards")],
             [InlineKeyboardButton(text="📜 Discover the Lore", callback_data="hub:lore")],
             [InlineKeyboardButton(text="👑 RANKS & LEADERBOARD", callback_data="hub:leaderboard")],
+            [InlineKeyboardButton(text="🔔 NOTIFICATIONS & UPDATES", callback_data="hub:notifications")],
         ]
     )
 
@@ -394,6 +407,25 @@ async def show_rewards_screen(message: types.Message, user: types.User | None = 
     )
 
 
+async def show_notifications_screen(message: types.Message, user: types.User | None = None):
+    await send_screen(
+        message,
+        "🔔 MCN NOTIFICATIONS & PROJECT UPDATES\n\n"
+        + HOLD_CONTEST_TEXT
+        + "\n\nFollow the official MCN channels for future announcements.",
+        InlineKeyboardMarkup(
+            inline_keyboard=[
+                [InlineKeyboardButton(text="🐾 @MCN_MAINECOON", url="https://x.com/MCN_MAINECOON")],
+                [InlineKeyboardButton(text="👑 @KingStanny", url="https://x.com/KingStanny")],
+                [InlineKeyboardButton(text="🌐 MCN Website", url="https://mainecoonmcn.vercel.app/")],
+                [InlineKeyboardButton(text="🏆 COMMUNITY & REWARDS", callback_data="hub:rewards")],
+                [InlineKeyboardButton(text="🏠 KINGDOM HOME", callback_data="navigation:home")],
+            ]
+        ),
+        "mcn kingdom",
+    )
+
+
 async def show_lore_screen(message: types.Message, user: types.User | None = None):
     await _send_portal_info(
         message,
@@ -468,6 +500,11 @@ async def open_buy_guide(message: types.Message):
     await show_verify_screen(message, message.from_user)
 
 
+@router.message(Command("notifications"))
+async def open_notifications(message: types.Message):
+    await show_notifications_screen(message, message.from_user)
+
+
 @router.callback_query(F.data == "navigation:home")
 async def back_to_home(callback: types.CallbackQuery):
     await callback.answer()
@@ -496,6 +533,7 @@ async def open_hub_section(callback: types.CallbackQuery):
         "verify": show_verify_screen,
         "security": show_security_screen,
         "rewards": show_rewards_screen,
+        "notifications": show_notifications_screen,
         "lore": show_lore_screen,
         "links": show_links_screen,
         "vault": vault.show_vault,

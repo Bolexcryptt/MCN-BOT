@@ -51,8 +51,30 @@ class BackButtonCoverageTest(unittest.IsolatedAsyncioTestCase):
                 "hub:rewards",
                 "hub:lore",
                 "hub:leaderboard",
+                "hub:notifications",
             },
         )
+
+    async def test_notifications_screen_displays_hold_contest_and_official_links(self):
+        message = self.make_message()
+        await navigation.show_notifications_screen(message, message.from_user)
+
+        text, options = message.sent[-1]
+        text = text[0]
+        self.assertIn("The MCN Hold Contest is back.", text)
+        self.assertIn("Hold at least $10 of MCN on Base", text)
+        self.assertIn("5 winners will be selected every week.", text)
+        self.assertIn("Each winner receives $5 worth of ETH.", text)
+        self.assertIn("Follow @MCN_MAINECOON", text)
+        self.assertIn("Follow @KingStanny", text)
+        self.assertIn("Buy & hold at least $10 of $MCN", text)
+        buttons = [
+            button
+            for row in options["reply_markup"].inline_keyboard
+            for button in row
+        ]
+        self.assertTrue(any(button.callback_data == "hub:rewards" for button in buttons))
+        self.assertTrue(any(button.callback_data == "navigation:home" for button in buttons))
 
     async def test_profile_screen_has_back_button(self):
         message = self.make_message()
@@ -230,16 +252,20 @@ class BackButtonCoverageTest(unittest.IsolatedAsyncioTestCase):
         )
         with patch.object(navigation, "show_mcn_screen", new_callable=AsyncMock) as show_mcn, \
              patch.object(navigation, "show_rewards_screen", new_callable=AsyncMock) as show_rewards, \
+             patch.object(navigation, "show_notifications_screen", new_callable=AsyncMock) as show_notifications, \
              patch("handlers.leaderboard.show_leaderboard", new_callable=AsyncMock) as show_leaderboard:
             await navigation.open_hub_section(callback)
             callback.data = "hub:rewards"
             await navigation.open_hub_section(callback)
             callback.data = "hub:leaderboard"
             await navigation.open_hub_section(callback)
+            callback.data = "hub:notifications"
+            await navigation.open_hub_section(callback)
 
         show_mcn.assert_awaited_once_with(message, message.from_user)
         show_rewards.assert_awaited_once_with(message, message.from_user)
         show_leaderboard.assert_awaited_once_with(message, message.from_user)
+        show_notifications.assert_awaited_once_with(message, message.from_user)
 
 
 if __name__ == "__main__":
