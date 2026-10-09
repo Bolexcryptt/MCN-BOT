@@ -108,6 +108,7 @@ class BackButtonCoverageTest(unittest.IsolatedAsyncioTestCase):
             await leaderboard.leaderboard(message)
 
         self.assert_last_message_has_back(message)
+        self.assertIn("🐾 Guardian", message.sent[-1][0][0])
         get_leaderboard.assert_awaited_once_with(
             10,
             exclude_user_ids=(999,),

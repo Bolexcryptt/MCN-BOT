@@ -6,6 +6,9 @@ from db import init_db
 
 from handlers import user, vault, profile, invite, leaderboard, navigation, draw
 
+if not BOT_TOKEN:
+    raise RuntimeError("Set BOT_TOKEN in the deployment environment.")
+
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 

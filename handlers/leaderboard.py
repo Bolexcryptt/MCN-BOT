@@ -1,7 +1,7 @@
 from aiogram import Router, types
 from aiogram.filters import Command
 
-from db import ensure_user, get_leaderboard
+from db import ensure_user, get_leaderboard, rank_for_energy
 from handlers.navigation import back_keyboard, send_screen
 
 router = Router()
@@ -36,7 +36,13 @@ async def show_leaderboard(message: types.Message, user: types.User):
         first_name = entry[3] if len(entry) > 3 else None
         display_name = f"@{username}" if username else (first_name or "Guardian")
         medal = medals[index - 1] if index <= len(medals) else f"#{index}"
-        entries.append(f"{medal} {display_name}\n⚡ {energy:,} Energy\n🛡️ {vaults} Vaults")
+        rank = rank_for_energy(energy)[0]
+        entries.append(
+            f"{medal} {display_name}\n"
+            f"{rank}\n"
+            f"⚡ {energy:,} Energy\n"
+            f"🛡️ {vaults} Vaults"
+        )
 
     text = (
         "🏛️ THE VAULT RANKINGS\n\n"

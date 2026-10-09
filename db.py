@@ -36,7 +36,7 @@ USER_COLUMNS = {
 }
 
 DRAW_COLUMNS = {
-    "user_id": "INTEGER NOT NULL",
+    "user_id": "INTEGER NOT NULL DEFAULT 0",
     "wallet_address": "TEXT NOT NULL",
     "registered_at": "TEXT NOT NULL",
     "registration_mcn_qty": "TEXT",
@@ -47,6 +47,7 @@ DRAW_COLUMNS = {
     "final_check_at": "TEXT",
     "final_mcn_qty": "TEXT",
     "final_usd_value": "REAL",
+    "final_check_status": "TEXT",
 }
 
 
@@ -96,6 +97,7 @@ async def init_db():
                 final_check_at TEXT,
                 final_mcn_qty TEXT,
                 final_usd_value REAL,
+                final_check_status TEXT,
                 UNIQUE(user_id, wallet_address)
             )
             """)
@@ -105,6 +107,15 @@ async def init_db():
             for column_name, column_sql in DRAW_COLUMNS.items():
                 if column_name not in draw_columns:
                     await db.execute(f"ALTER TABLE draw_registrations ADD COLUMN {column_name} {column_sql}")
+        duplicate_wallets = await db.execute(
+            """SELECT 1 FROM draw_registrations
+               GROUP BY LOWER(wallet_address) HAVING COUNT(*) > 1 LIMIT 1"""
+        )
+        if await duplicate_wallets.fetchone() is None:
+            await db.execute(
+                """CREATE UNIQUE INDEX IF NOT EXISTS ux_draw_wallet_address
+                   ON draw_registrations(LOWER(wallet_address))"""
+            )
 
         await db.execute("""
         CREATE TABLE IF NOT EXISTS referrals (
@@ -399,28 +410,30 @@ async def get_leaderboard(
         return await cursor.fetchall()
 
 
-async def upsert_draw_registration(
+async def register_draw_wallet(
     user_id: int,
     wallet_address: str,
     registration_mcn_qty: str,
     registration_usd_value: float,
     registration_price: float,
-    eligible_for_draw: int,
-):
+) -> bool:
     registered_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     async with aiosqlite.connect(DB_NAME) as db:
+        await db.execute("BEGIN IMMEDIATE")
+        cursor = await db.execute(
+            """SELECT 1 FROM draw_registrations
+               WHERE LOWER(wallet_address) = LOWER(?)""",
+            (wallet_address,),
+        )
+        if await cursor.fetchone():
+            await db.commit()
+            return False
         await db.execute(
             """
             INSERT INTO draw_registrations (
                 user_id, wallet_address, registered_at, registration_mcn_qty,
                 registration_usd_value, registration_price, eligible_for_draw
             ) VALUES (?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(user_id, wallet_address) DO UPDATE SET
-                registered_at = excluded.registered_at,
-                registration_mcn_qty = excluded.registration_mcn_qty,
-                registration_usd_value = excluded.registration_usd_value,
-                registration_price = excluded.registration_price,
-                eligible_for_draw = excluded.eligible_for_draw
             """,
             (
                 user_id,
@@ -429,22 +442,49 @@ async def upsert_draw_registration(
                 registration_mcn_qty,
                 registration_usd_value,
                 registration_price,
-                eligible_for_draw,
+                1,
             ),
         )
         await db.commit()
+        return True
 
 
-async def get_draw_registrations(limit: int = 50):
+async def get_draw_registrations():
     async with aiosqlite.connect(DB_NAME) as db:
         cursor = await db.execute(
             """
             SELECT user_id, wallet_address, registered_at, registration_mcn_qty,
-                   registration_usd_value, registration_price, eligible_for_draw
+                   registration_usd_value, registration_price, eligible_for_draw,
+                   final_check_passed, final_check_at, final_mcn_qty, final_usd_value,
+                   final_check_status
             FROM draw_registrations
             ORDER BY registered_at DESC
-            LIMIT ?
-            """,
-            (limit,),
+            """
         )
         return await cursor.fetchall()
+
+
+async def update_draw_final_check(
+    wallet_address: str,
+    passed: bool | None,
+    status: str,
+    checked_at: str,
+    mcn_qty: str | None,
+    usd_value: float | None,
+) -> None:
+    async with aiosqlite.connect(DB_NAME) as db:
+        await db.execute(
+            """UPDATE draw_registrations
+               SET final_check_passed = ?, final_check_at = ?,
+                   final_mcn_qty = ?, final_usd_value = ?, final_check_status = ?
+               WHERE LOWER(wallet_address) = LOWER(?)""",
+            (
+                int(passed) if passed is not None else None,
+                checked_at,
+                mcn_qty,
+                usd_value,
+                status,
+                wallet_address,
+            ),
+        )
+        await db.commit()

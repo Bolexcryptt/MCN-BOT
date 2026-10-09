@@ -21,6 +21,12 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 ASSET_DIR = PROJECT_ROOT
 
 _ARTWORK_ASSET_MAP = {
+    "rank vault guardian": ("vault2.png", "thevault.png"),
+    "rank royal guardian": ("royalguardians.png",),
+    "rank elite guardian": ("eliteguardians.png",),
+    "rank ambassador": ("ambassador.png",),
+    "rank guardian": ("guardians.png",),
+    "rank legend": ("kingdom3.png", "kingdom4.png"),
     "guardian hub": ("kingdom1.png", "kingdom2.png", "kingdom3.png"),
     "guardian profile": ("guardians.png", "eliteguardians.png", "royalguardians.png"),
     "vault entrance": ("thevault.png", "vault2.png", "kingdom3.png"),

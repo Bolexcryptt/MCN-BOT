@@ -2,6 +2,9 @@ import unittest
 from unittest.mock import patch
 
 from handlers.market_data import (
+    MarketDataError,
+    _fetch_mcn_price_usd,
+    _fetch_wallet_balance,
     _load_contract_facts,
     fetch_live_metrics,
 )
@@ -57,6 +60,43 @@ class MarketDataTest(unittest.IsolatedAsyncioTestCase):
             facts = _load_contract_facts()
 
         self.assertIn("Renounced", facts["ownership"])
+
+    def test_wallet_balance_uses_base_token_contract_balance_of_and_decimals(self):
+        wallet = "0x1234567890abcdef1234567890abcdef12345678"
+        raw_balance = hex(25 * 10**18)
+        with patch(
+            "handlers.market_data._rpc_eth_call",
+            side_effect=("0x12", raw_balance),
+        ) as rpc_call:
+            balance = _fetch_wallet_balance(wallet)
+
+        self.assertEqual(str(balance), "25")
+        rpc_call.assert_any_call("0x313ce567")
+        rpc_call.assert_any_call("0x70a08231" + wallet[2:].rjust(64, "0"))
+
+    def test_wallet_balance_rejects_malformed_address_without_rpc(self):
+        with patch("handlers.market_data._rpc_eth_call") as rpc_call:
+            with self.assertRaises(MarketDataError):
+                _fetch_wallet_balance("0xnot-a-wallet")
+        rpc_call.assert_not_called()
+
+    def test_draw_price_uses_token_address_usd_price_from_geckoterminal(self):
+        with patch(
+            "handlers.market_data._request_json",
+            return_value={"data": {"attributes": {"price_usd": "0.0000125"}}},
+        ):
+            price, updated_at = _fetch_mcn_price_usd()
+
+        self.assertEqual(str(price), "0.0000125")
+        self.assertTrue(updated_at.endswith("UTC"))
+
+    def test_draw_price_rejects_missing_price_as_temporary_provider_error(self):
+        with patch(
+            "handlers.market_data._request_json",
+            return_value={"data": {"attributes": {}}},
+        ):
+            with self.assertRaises(MarketDataError):
+                _fetch_mcn_price_usd()
 
 
 if __name__ == "__main__":

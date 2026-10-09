@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import re
 from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation
 from urllib.error import URLError
@@ -11,6 +12,9 @@ POOL_ADDRESS = "0xc3688a53e99af856fac2a43bd470eb7dd1b0668f"
 BASE_RPC_URL = "https://mainnet.base.org"
 GECKOTERMINAL_POOL_URL = (
     f"https://api.geckoterminal.com/api/v2/networks/base/pools/{POOL_ADDRESS}"
+)
+GECKOTERMINAL_TOKEN_URL = (
+    f"https://api.geckoterminal.com/api/v2/networks/base/tokens/{TOKEN_ADDRESS}"
 )
 
 logger = logging.getLogger(__name__)
@@ -97,13 +101,13 @@ async def fetch_live_metrics() -> dict[str, str]:
     }
 
 
-def _rpc_eth_call(selector: str) -> str:
+def _rpc_eth_call(selector: str, contract_address: str = TOKEN_ADDRESS) -> str:
     response = _request_json(
         BASE_RPC_URL,
         {
             "jsonrpc": "2.0",
             "method": "eth_call",
-            "params": [{"to": TOKEN_ADDRESS, "data": selector}, "latest"],
+            "params": [{"to": contract_address, "data": selector}, "latest"],
             "id": 1,
         },
     )
@@ -149,29 +153,37 @@ async def fetch_contract_facts() -> dict[str, str]:
 
 def _fetch_wallet_balance(wallet: str) -> Decimal:
     wallet = wallet.strip()
-    if not wallet.startswith("0x") or len(wallet) != 42:
+    if not re.fullmatch(r"0x[0-9a-fA-F]{40}", wallet):
         raise MarketDataError("Invalid wallet address format.")
-    response = _request_json(
-        "https://api.geckoterminal.com/api/v2/networks/base/address/" + wallet,
-        None,
-    )
-    token_balances = response.get("data") or {}
-    if isinstance(token_balances, dict):
-        token_balances = token_balances.get("attributes", {}).get("token_balances", [])
-    if not isinstance(token_balances, list):
-        raise MarketDataError("Wallet token data was not available.")
-    for item in token_balances:
-        if not isinstance(item, dict):
-            continue
-        address = str(item.get("address", "")).casefold()
-        if address == TOKEN_ADDRESS.casefold():
-            qty = item.get("balance")
-            try:
-                return Decimal(str(qty))
-            except (InvalidOperation, ValueError):
-                return Decimal("0")
-    return Decimal("0")
+    try:
+        decimals = int(_rpc_eth_call("0x313ce567"), 16)
+        balance_data = "0x70a08231" + wallet[2:].lower().rjust(64, "0")
+        raw_balance = int(_rpc_eth_call(balance_data), 16)
+    except (ValueError, OverflowError) as exc:
+        raise MarketDataError("Base RPC returned an invalid MCN balance.") from exc
+
+    if decimals > 36:
+        raise MarketDataError("MCN contract returned an unsupported decimals value.")
+    return Decimal(raw_balance) / (Decimal(10) ** decimals)
 
 
 async def fetch_wallet_mcn_balance(wallet: str) -> Decimal:
     return await asyncio.to_thread(_fetch_wallet_balance, wallet)
+
+
+def _fetch_mcn_price_usd() -> tuple[Decimal, str]:
+    response = _request_json(GECKOTERMINAL_TOKEN_URL)
+    try:
+        attributes = response["data"]["attributes"]
+        price = Decimal(str(attributes["price_usd"]))
+    except (KeyError, TypeError, InvalidOperation, ValueError) as exc:
+        raise MarketDataError("GeckoTerminal did not return a current MCN/USD price.") from exc
+
+    if not price.is_finite() or price <= 0:
+        raise MarketDataError("GeckoTerminal returned an invalid MCN/USD price.")
+    updated_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+    return price, updated_at
+
+
+async def fetch_mcn_price_usd() -> tuple[Decimal, str]:
+    return await asyncio.to_thread(_fetch_mcn_price_usd)

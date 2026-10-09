@@ -6,6 +6,15 @@ from handlers.navigation import back_keyboard, send_screen
 
 router = Router()
 
+RANK_ARTWORK = (
+    "Rank Guardian",
+    "Rank Royal Guardian",
+    "Rank Elite Guardian",
+    "Rank Ambassador",
+    "Rank Vault Guardian",
+    "Rank Legend",
+)
+
 
 @router.message(Command("me"))
 async def me(msg: types.Message):
@@ -30,7 +39,7 @@ async def show_profile(message: types.Message, user: types.User):
     energy = data[2] or 0
     vaults = data[6] or 0
     invites = data[5] or 0
-    rank, next_threshold, current_threshold, _ = rank_for_energy(energy)
+    rank, next_threshold, current_threshold, rank_index = rank_for_energy(energy)
     if next_threshold is None:
         progress_text = "MAXIMUM RANK REACHED 👑"
         progress_bar = "██████████ 100%"
@@ -55,4 +64,4 @@ async def show_profile(message: types.Message, user: types.User):
         f"{progress_text}\n{progress_bar}\n\n"
         "Earn XP through Vault trials, unlimited questions, daily activity and referrals."
     )
-    await send_screen(message, text, back_keyboard(), "Guardian Profile")
+    await send_screen(message, text, back_keyboard(), RANK_ARTWORK[rank_index])
