@@ -13,7 +13,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import BufferedInputFile, InlineKeyboardButton, InlineKeyboardMarkup
 
-from config import MCN_OWNER_ID, MCN_TESTER_IDS
+from config import MCN_OWNER_ID
 from db import (
     ensure_user,
     get_draw_registrations,
@@ -54,14 +54,6 @@ def _is_owner(user: types.User | None, chat: types.Chat) -> bool:
     )
 
 
-def _can_test_draw(user: types.User | None, chat: types.Chat) -> bool:
-    return (
-        chat.type == "private"
-        and user is not None
-        and user.id in MCN_TESTER_IDS | ({MCN_OWNER_ID} if MCN_OWNER_ID is not None else set())
-    )
-
-
 def _admin_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
@@ -79,6 +71,7 @@ async def show_draw_screen(message: types.Message, user: types.User | None = Non
     await ensure_user(user or message.from_user)
     text = (
         "🎟️ DRAW REGISTRATION\n\n"
+        "Open to every community member who meets the eligibility rules.\n"
         "Only a public Base wallet address is required.\n"
         "No private key, seed phrase, or wallet password is ever requested.\n\n"
         "Rules:\n"
@@ -105,13 +98,13 @@ async def open_draw(message: types.Message):
 
 @router.message(Command("drawtest"))
 async def start_draw_test(message: types.Message, state: FSMContext):
-    if not _can_test_draw(message.from_user, message.chat):
-        await message.answer("⛔ Private draw testing is restricted to the configured owner and testers.")
+    if not _is_private(message):
+        await message.answer("Please run /drawtest in the bot’s private chat.")
         return
     await state.set_state(DrawRegisterState.waiting_for_wallet)
     await state.update_data(draw_test_mode=True)
     await message.answer(
-        "🧪 PRIVATE CONTEST TEST MODE\n\n"
+        "🧪 PRIVATE CONTEST TEST MODE — OPEN TO ALL\n\n"
         "Send a public Base wallet address to test the live contract balance and MCN/USD price.\n"
         "This test will not create or change a contest registration."
     )
@@ -153,10 +146,6 @@ async def receive_wallet_for_draw(message: types.Message, state: FSMContext):
 
     state_data = await state.get_data()
     test_mode = bool(state_data.get("draw_test_mode"))
-    if test_mode and not _can_test_draw(message.from_user, message.chat):
-        await state.clear()
-        await message.answer("⛔ Private draw testing is restricted to the configured owner and testers.")
-        return
     try:
         price, price_updated_at = await fetch_mcn_price_usd()
         balance = await fetch_wallet_mcn_balance(wallet)

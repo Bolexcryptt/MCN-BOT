@@ -168,6 +168,30 @@ class DrawMessageFlowTest(unittest.IsolatedAsyncioTestCase):
         self.assertIn("✅ Eligible", message.answer.await_args_list[0].args[0])
         state.clear.assert_awaited_once()
 
+    async def test_non_owner_can_start_regular_draw_registration_in_private_chat(self):
+        user = SimpleNamespace(id=987654321, username="community_member", first_name="Member")
+        chat = SimpleNamespace(type="private")
+        message = SimpleNamespace(
+            from_user=user,
+            chat=chat,
+            answer=AsyncMock(),
+            answer_photo=None,
+        )
+        state = SimpleNamespace(set_state=AsyncMock())
+        callback = SimpleNamespace(
+            message=message,
+            from_user=user,
+            answer=AsyncMock(),
+        )
+        with (
+            patch.object(draw, "MCN_OWNER_ID", 123),
+        ):
+            await draw.start_draw_registration(callback, state)
+
+        state.set_state.assert_awaited_once_with(draw.DrawRegisterState.waiting_for_wallet)
+        self.assertIn("public Base wallet address", message.answer.await_args.args[0])
+        callback.answer.assert_awaited_once()
+
     async def test_insufficient_balance_is_not_registered(self):
         wallet = "0x1234567890abcdef1234567890abcdef12345678"
         message = self.make_message(wallet)
@@ -210,7 +234,7 @@ class DrawMessageFlowTest(unittest.IsolatedAsyncioTestCase):
         self.assertIn("send the same public address again", message.answer.await_args.args[0])
         state.clear.assert_not_awaited()
 
-    async def test_draw_test_mode_performs_live_checks_without_creating_entry(self):
+    async def test_any_private_user_can_run_draw_test_without_creating_entry(self):
         wallet = "0x1234567890abcdef1234567890abcdef12345678"
         message = self.make_message(wallet)
         state = SimpleNamespace(
@@ -218,8 +242,6 @@ class DrawMessageFlowTest(unittest.IsolatedAsyncioTestCase):
             clear=AsyncMock(),
         )
         with (
-            patch.object(draw, "MCN_OWNER_ID", 123),
-            patch.object(draw, "MCN_TESTER_IDS", frozenset()),
             patch(
                 "handlers.draw.fetch_mcn_price_usd",
                 new_callable=AsyncMock,
@@ -239,17 +261,14 @@ class DrawMessageFlowTest(unittest.IsolatedAsyncioTestCase):
         register.assert_not_awaited()
         state.clear.assert_awaited_once()
 
-    async def test_draw_test_mode_is_restricted_to_private_configured_testers(self):
+    async def test_draw_test_mode_is_private_chat_only(self):
         message = self.make_message("/drawtest", user_id=124)
+        message.chat.type = "supergroup"
         state = SimpleNamespace(set_state=AsyncMock(), update_data=AsyncMock())
-        with (
-            patch.object(draw, "MCN_OWNER_ID", 123),
-            patch.object(draw, "MCN_TESTER_IDS", frozenset()),
-        ):
-            await draw.start_draw_test(message, state)
+        await draw.start_draw_test(message, state)
 
         state.set_state.assert_not_awaited()
-        self.assertIn("restricted", message.answer.await_args.args[0])
+        self.assertIn("private chat", message.answer.await_args.args[0])
 
     async def test_admin_participant_view_is_never_loaded_for_non_owner(self):
         message = self.make_message("/drawadmin")
