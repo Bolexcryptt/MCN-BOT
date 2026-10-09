@@ -35,6 +35,20 @@ USER_COLUMNS = {
     "joined_at": "TEXT",
 }
 
+DRAW_COLUMNS = {
+    "user_id": "INTEGER NOT NULL",
+    "wallet_address": "TEXT NOT NULL",
+    "registered_at": "TEXT NOT NULL",
+    "registration_mcn_qty": "TEXT",
+    "registration_usd_value": "REAL",
+    "registration_price": "REAL",
+    "eligible_for_draw": "INTEGER DEFAULT 0",
+    "final_check_passed": "INTEGER DEFAULT 0",
+    "final_check_at": "TEXT",
+    "final_mcn_qty": "TEXT",
+    "final_usd_value": "REAL",
+}
+
 
 def rank_for_energy(energy: int) -> tuple[str, int | None, int, int]:
     for index in range(len(RANKS) - 1, -1, -1):
@@ -65,6 +79,32 @@ async def init_db():
         for column_name, column_sql in USER_COLUMNS.items():
             if column_name not in columns:
                 await db.execute(f"ALTER TABLE users ADD COLUMN {column_name} {column_sql}")
+
+        draw_table = await db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='draw_registrations'")
+        if await draw_table.fetchone() is None:
+            await db.execute("""
+            CREATE TABLE draw_registrations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                wallet_address TEXT NOT NULL,
+                registered_at TEXT NOT NULL,
+                registration_mcn_qty TEXT,
+                registration_usd_value REAL,
+                registration_price REAL,
+                eligible_for_draw INTEGER DEFAULT 0,
+                final_check_passed INTEGER DEFAULT 0,
+                final_check_at TEXT,
+                final_mcn_qty TEXT,
+                final_usd_value REAL,
+                UNIQUE(user_id, wallet_address)
+            )
+            """)
+        else:
+            draw_columns_cursor = await db.execute("PRAGMA table_info(draw_registrations)")
+            draw_columns = {row[1] for row in await draw_columns_cursor.fetchall()}
+            for column_name, column_sql in DRAW_COLUMNS.items():
+                if column_name not in draw_columns:
+                    await db.execute(f"ALTER TABLE draw_registrations ADD COLUMN {column_name} {column_sql}")
 
         await db.execute("""
         CREATE TABLE IF NOT EXISTS referrals (
@@ -323,11 +363,88 @@ async def complete_daily_challenge(user_id: int, today: str, answer: str) -> tup
         return True, energy
 
 
-async def get_leaderboard(limit=10):
+async def get_leaderboard(
+    limit: int = 10,
+    exclude_user_ids: tuple[int, ...] = (),
+    exclude_usernames: tuple[str, ...] = (),
+):
+    async with aiosqlite.connect(DB_NAME) as db:
+        conditions = []
+        parameters: list[int | str] = []
+        if exclude_user_ids:
+            placeholders = ",".join("?" for _ in exclude_user_ids)
+            conditions.append(f"user_id NOT IN ({placeholders})")
+            parameters.extend(exclude_user_ids)
+
+        usernames = tuple(
+            username.casefold().lstrip("@")
+            for username in exclude_usernames
+            if username
+        )
+        if usernames:
+            placeholders = ",".join("?" for _ in usernames)
+            conditions.append(
+                f"LOWER(COALESCE(username, '')) NOT IN ({placeholders})"
+            )
+            parameters.extend(usernames)
+
+        where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+        parameters.append(limit)
+        cursor = await db.execute(
+            f"""SELECT username, points, total_vaults, first_name FROM users
+                {where_clause}
+                ORDER BY points DESC, total_vaults DESC LIMIT ?""",
+            parameters,
+        )
+        return await cursor.fetchall()
+
+
+async def upsert_draw_registration(
+    user_id: int,
+    wallet_address: str,
+    registration_mcn_qty: str,
+    registration_usd_value: float,
+    registration_price: float,
+    eligible_for_draw: int,
+):
+    registered_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+    async with aiosqlite.connect(DB_NAME) as db:
+        await db.execute(
+            """
+            INSERT INTO draw_registrations (
+                user_id, wallet_address, registered_at, registration_mcn_qty,
+                registration_usd_value, registration_price, eligible_for_draw
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(user_id, wallet_address) DO UPDATE SET
+                registered_at = excluded.registered_at,
+                registration_mcn_qty = excluded.registration_mcn_qty,
+                registration_usd_value = excluded.registration_usd_value,
+                registration_price = excluded.registration_price,
+                eligible_for_draw = excluded.eligible_for_draw
+            """,
+            (
+                user_id,
+                wallet_address,
+                registered_at,
+                registration_mcn_qty,
+                registration_usd_value,
+                registration_price,
+                eligible_for_draw,
+            ),
+        )
+        await db.commit()
+
+
+async def get_draw_registrations(limit: int = 50):
     async with aiosqlite.connect(DB_NAME) as db:
         cursor = await db.execute(
-            """SELECT username, points, total_vaults, first_name FROM users
-               ORDER BY points DESC, total_vaults DESC LIMIT ?""",
+            """
+            SELECT user_id, wallet_address, registered_at, registration_mcn_qty,
+                   registration_usd_value, registration_price, eligible_for_draw
+            FROM draw_registrations
+            ORDER BY registered_at DESC
+            LIMIT ?
+            """,
             (limit,),
         )
         return await cursor.fetchall()

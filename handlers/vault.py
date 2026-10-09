@@ -772,7 +772,10 @@ async def show_vault(message: types.Message, user: types.User):
         f"🛡️ {guardian_rank} Trial\n"
         "⚡ Energy at stake: +5 per correct seal\n"
         f"🏛️ Trial status: {vault_users[user_id]}/{TOTAL_VAULT_QUESTIONS}\n\n"
-        "Five questions stand between you and completion. Your daily attempt begins now.",
+        "One Vault trial is available per UTC day. Complete five correct seals to add one Vault to your record. Incorrect answers do not advance the seal; you may continue today's trial until all five are correct.\n\n"
+        "Energy determines rank; Energy and completed Vaults appear on your Guardian profile and the community leaderboard.\n\n"
+        "Five questions stand between you and completion. Your daily attempt begins now.\n"
+        "Oria sees every Guardian.",
         artwork="Vault Entrance",
     )
     await send_vault_question(message, user_id, persist=True)

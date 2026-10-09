@@ -14,7 +14,12 @@ async def leaderboard(msg: types.Message):
 
 async def show_leaderboard(message: types.Message, user: types.User):
     await ensure_user(user)
-    users = await get_leaderboard(10)
+    bot_user = await message.bot.get_me()
+    users = await get_leaderboard(
+        10,
+        exclude_user_ids=(bot_user.id,),
+        exclude_usernames=("MCN_MAINECOON", bot_user.username or ""),
+    )
     if not users:
         text = (
             "🏛️ THE VAULT RANKINGS\n\n"
@@ -35,6 +40,7 @@ async def show_leaderboard(message: types.Message, user: types.User):
 
     text = (
         "🏛️ THE VAULT RANKINGS\n\n"
+        "Energy (Guardian XP) determines rank. Vaults count completed five-seal daily trials.\n\n"
         "━━━━━━━━━━━━━━━━━━\n\n"
         + "\n\n".join(entries)
         + "\n\n━━━━━━━━━━━━━━━━━━\n\n"

@@ -50,6 +50,24 @@ class GuardianProgressionTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(data[5], 1)
         self.assertEqual(await db.get_invite_stats(202), (1, 50))
 
+    async def test_leaderboard_excludes_official_account_and_bot_user(self):
+        for user_id, username, energy in (
+            (801, "guardian_one", 50),
+            (802, "MCN_MAINECOON", 500),
+            (803, "official_bot", 1000),
+            (804, "guardian_two", 25),
+        ):
+            await db.ensure_user(SimpleNamespace(id=user_id, username=username, first_name=username))
+            await db.add_points(SimpleNamespace(id=user_id, username=username, first_name=username), energy)
+
+        leaderboard = await db.get_leaderboard(
+            10,
+            exclude_user_ids=(803,),
+            exclude_usernames=("mcn_mainecoon",),
+        )
+
+        self.assertEqual([row[0] for row in leaderboard], ["guardian_one", "guardian_two"])
+
     async def test_daily_claim_and_seventh_day_streak_are_idempotent(self):
         await db.ensure_user(SimpleNamespace(id=404, username=None, first_name="Guardian"))
 

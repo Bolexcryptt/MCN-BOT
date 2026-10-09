@@ -4,7 +4,7 @@ from aiogram import Bot, Dispatcher
 from config import BOT_TOKEN
 from db import init_db
 
-from handlers import user, vault, profile, invite, leaderboard, navigation
+from handlers import user, vault, profile, invite, leaderboard, navigation, draw
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
@@ -14,6 +14,7 @@ dp.include_router(profile.router)
 dp.include_router(invite.router)
 dp.include_router(leaderboard.router)
 dp.include_router(navigation.router)
+dp.include_router(draw.router)
 dp.include_router(vault.router)  # message catch-all must remain last
 
 async def main():

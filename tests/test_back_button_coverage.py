@@ -98,13 +98,21 @@ class BackButtonCoverageTest(unittest.IsolatedAsyncioTestCase):
 
     async def test_leaderboard_screen_has_back_button(self):
         message = self.make_message()
+        message.bot = SimpleNamespace(
+            get_me=AsyncMock(return_value=SimpleNamespace(id=999, username="test_bot"))
+        )
         with (
             patch("handlers.leaderboard.ensure_user", new_callable=AsyncMock),
-            patch("handlers.leaderboard.get_leaderboard", new_callable=AsyncMock, return_value=[("guardian", 8, 1)]),
+            patch("handlers.leaderboard.get_leaderboard", new_callable=AsyncMock, return_value=[("guardian", 8, 1)]) as get_leaderboard,
         ):
             await leaderboard.leaderboard(message)
 
         self.assert_last_message_has_back(message)
+        get_leaderboard.assert_awaited_once_with(
+            10,
+            exclude_user_ids=(999,),
+            exclude_usernames=("MCN_MAINECOON", "test_bot"),
+        )
 
     async def test_invite_screen_has_back_button(self):
         message = self.make_message()
@@ -154,6 +162,25 @@ class BackButtonCoverageTest(unittest.IsolatedAsyncioTestCase):
         self.assertIn("hub:trials", callbacks)
         self.assertIn("hub:leaderboard", callbacks)
 
+    async def test_vault_explains_daily_limit_and_completed_vault_count(self):
+        message = self.make_message()
+        user_data = [None] * 19
+        user_data[8] = "🐾 Guardian"
+        with (
+            patch("handlers.vault.ensure_user", new_callable=AsyncMock),
+            patch("handlers.vault.get_user", new_callable=AsyncMock, return_value=tuple(user_data)),
+            patch("handlers.vault.save_vault_state", new_callable=AsyncMock),
+            patch("handlers.vault.send_vault_question", new_callable=AsyncMock) as send_question,
+        ):
+            await vault.show_vault(message, message.from_user)
+
+        text = message.sent[0][0][0]
+        self.assertIn("One Vault trial is available per UTC day", text)
+        self.assertIn("Complete five correct seals to add one Vault", text)
+        self.assertIn("Energy determines rank", text)
+        self.assertIn("Oria sees every Guardian.", text)
+        send_question.assert_awaited_once()
+
     async def test_mcn_screen_renders_site_and_verify_buttons(self):
         message = self.make_message()
         await navigation.show_mcn_screen(message, message.from_user)
@@ -174,6 +201,9 @@ class BackButtonCoverageTest(unittest.IsolatedAsyncioTestCase):
 
         text, options = message.sent[-1]
         self.assertIn("COMMUNITY & REWARDS", text[0])
+        self.assertIn("CURRENT CONTEST", text[0])
+        self.assertIn("Hold at least $10 of MCN on Base", text[0])
+        self.assertIn("no winner list is published", text[0])
         buttons = [
             button
             for row in options["reply_markup"].inline_keyboard
@@ -184,15 +214,34 @@ class BackButtonCoverageTest(unittest.IsolatedAsyncioTestCase):
         self.assertIn("hub:profile", callbacks)
         self.assertIn("hub:invite", callbacks)
 
+    async def test_rewards_screen_says_no_active_contest_when_none_is_configured(self):
+        message = self.make_message()
+        with patch.object(navigation, "ACTIVE_CONTEST_TEXT", None):
+            await navigation.show_rewards_screen(message, message.from_user)
+        self.assertIn("There is currently no active contest.", message.sent[-1][0][0])
+
 
     async def test_verify_screen_shows_contract_lock_date_and_explorer_links(self):
         message = self.make_message()
-        await navigation.show_verify_screen(message, message.from_user)
+        with patch(
+            "handlers.navigation.fetch_contract_facts",
+            new_callable=AsyncMock,
+            return_value={
+                "supply": "1,000,000,000",
+                "ownership": "NOT renounced — owner(): 0x636c3ea0763b55912ad5bf5b2acc6629c9148ee0",
+                "updated_at": "2026-10-08 12:00:00 UTC",
+            },
+        ):
+            await navigation.show_verify_screen(message, message.from_user)
 
         text = message.sent[-1][0][0]
         self.assertIn("0x8e627241838b660cc90f96601952dcd7f47b7831", text)
-        self.assertIn("August 10, 2027", text)
-        self.assertIn("not a live guarantee", text)
+        self.assertIn("Total supply: 1,000,000,000 MCN (verified via Base totalSupply())", text)
+        self.assertIn("NOT renounced", text)
+        self.assertIn("owner(): 0x636c3ea0763b55912ad5bf5b2acc6629c9148ee0", text)
+        self.assertIn("Project-stated", text)
+        self.assertIn("August 10, 2027, 6:53 PM UTC", text)
+        self.assertLessEqual(len(text), 1024, "Telegram photo captions cannot exceed 1024 characters")
         buttons = [
             button
             for row in message.sent[-1][1]["reply_markup"].inline_keyboard
@@ -200,6 +249,57 @@ class BackButtonCoverageTest(unittest.IsolatedAsyncioTestCase):
         ]
         self.assertTrue(any(button.url and "basescan.org/token/" in button.url for button in buttons))
         self.assertTrue(any(button.url and "uncx.network/lockers/" in button.url for button in buttons))
+
+    async def test_live_screen_renders_dynamic_metrics_with_update_time(self):
+        message = self.make_message()
+        with patch(
+            "handlers.navigation.fetch_live_metrics",
+            new_callable=AsyncMock,
+            return_value={
+                "price": "$0.00000703",
+                "liquidity": "$5,980.27",
+                "holders": "Unavailable from this pool-data source",
+                "volume": "$0.00",
+                "transactions": "1 (Buys: 0 · Sells: 1)",
+                "market_cap": "Unavailable (provider reports no market cap)",
+                "fdv": "$7,035.14",
+                "updated_at": "2026-10-08 12:00:00 UTC",
+            },
+        ):
+            await navigation.show_live_data_screen(message, message.from_user)
+
+        text = message.sent[-1][0][0]
+        self.assertIn("$0.00000703", text)
+        self.assertIn("1 (Buys: 0 · Sells: 1)", text)
+        self.assertIn("Last updated: 2026-10-08 12:00:00 UTC", text)
+        self.assertIn("not estimated", text)
+        self.assertEqual(
+            {
+                button.callback_data
+                for row in message.sent[-1][1]["reply_markup"].inline_keyboard
+                for button in row
+                if button.callback_data and button.callback_data.startswith("live:")
+            },
+            {
+                "live:price",
+                "live:liquidity",
+                "live:holders",
+                "live:volume",
+                "live:transactions",
+                "live:market_cap",
+                "live:all",
+            },
+        )
+
+    async def test_safety_screen_explicitly_lists_wallet_secrets_to_protect(self):
+        message = self.make_message()
+        await navigation.show_security_screen(message, message.from_user)
+
+        text = message.sent[-1][0][0]
+        self.assertIn("Seed phrases", text)
+        self.assertIn("Private keys", text)
+        self.assertIn("Wallet passwords", text)
+        self.assertIn("MCN will never ask for your private keys.", text)
 
     async def test_official_links_screen_has_all_requested_direct_links(self):
         message = self.make_message()
