@@ -79,8 +79,8 @@ class DrawAccessAndRankVisualTest(unittest.TestCase):
             "royalguardians.png",
             "eliteguardians.png",
             "ambassador.png",
-            "vault2.png",
-            "kingdom3.png",
+            "vaultguardian.png",
+            "legend.png",
         )
         for label, filename in zip(RANK_ARTWORK, expected_files):
             with self.subTest(rank=label):
