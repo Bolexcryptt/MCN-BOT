@@ -6,6 +6,7 @@ from handlers.market_data import (
     _fetch_mcn_price_usd,
     _fetch_wallet_balance,
     _load_contract_facts,
+    _rpc_eth_call,
     fetch_live_metrics,
 )
 
@@ -97,6 +98,22 @@ class MarketDataTest(unittest.IsolatedAsyncioTestCase):
         ):
             with self.assertRaises(MarketDataError):
                 _fetch_mcn_price_usd()
+
+    def test_base_rpc_reads_fallback_provider_if_primary_is_unavailable(self):
+        with (
+            patch(
+                "handlers.market_data._request_json",
+                side_effect=(
+                    MarketDataError("primary unavailable"),
+                    {"result": "0x" + "1" * 64},
+                ),
+            ) as request_json,
+            patch("handlers.market_data.logger.warning"),
+        ):
+            result = _rpc_eth_call("0x313ce567")
+
+        self.assertEqual(result, "0x" + "1" * 64)
+        self.assertEqual(request_json.call_count, 2)
 
 
 if __name__ == "__main__":

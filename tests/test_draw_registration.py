@@ -133,10 +133,10 @@ class DrawAccessAndRankVisualTest(unittest.TestCase):
 
 
 class DrawMessageFlowTest(unittest.IsolatedAsyncioTestCase):
-    def make_message(self, wallet):
+    def make_message(self, wallet, user_id=123):
         return SimpleNamespace(
             text=wallet,
-            from_user=SimpleNamespace(id=123, username="guardian", first_name="Guardian"),
+            from_user=SimpleNamespace(id=user_id, username="guardian", first_name="Guardian"),
             chat=SimpleNamespace(type="private"),
             answer=AsyncMock(),
         )
@@ -144,7 +144,7 @@ class DrawMessageFlowTest(unittest.IsolatedAsyncioTestCase):
     async def test_eligible_wallet_is_registered_after_live_checks(self):
         wallet = "0x1234567890abcdef1234567890abcdef12345678"
         message = self.make_message(wallet)
-        state = SimpleNamespace(clear=AsyncMock())
+        state = SimpleNamespace(get_data=AsyncMock(return_value={}), clear=AsyncMock())
         with (
             patch(
                 "handlers.draw.fetch_mcn_price_usd",
@@ -171,7 +171,7 @@ class DrawMessageFlowTest(unittest.IsolatedAsyncioTestCase):
     async def test_insufficient_balance_is_not_registered(self):
         wallet = "0x1234567890abcdef1234567890abcdef12345678"
         message = self.make_message(wallet)
-        state = SimpleNamespace(clear=AsyncMock())
+        state = SimpleNamespace(get_data=AsyncMock(return_value={}), clear=AsyncMock())
         with (
             patch(
                 "handlers.draw.fetch_mcn_price_usd",
@@ -194,7 +194,7 @@ class DrawMessageFlowTest(unittest.IsolatedAsyncioTestCase):
         from handlers.market_data import MarketDataError
 
         message = self.make_message("0x1234567890abcdef1234567890abcdef12345678")
-        state = SimpleNamespace(clear=AsyncMock())
+        state = SimpleNamespace(get_data=AsyncMock(return_value={}), clear=AsyncMock())
         with (
             patch(
                 "handlers.draw.fetch_mcn_price_usd",
@@ -207,6 +207,47 @@ class DrawMessageFlowTest(unittest.IsolatedAsyncioTestCase):
 
         register.assert_not_awaited()
         self.assertIn("Temporary verification error", message.answer.await_args.args[0])
+
+    async def test_draw_test_mode_performs_live_checks_without_creating_entry(self):
+        wallet = "0x1234567890abcdef1234567890abcdef12345678"
+        message = self.make_message(wallet)
+        state = SimpleNamespace(
+            get_data=AsyncMock(return_value={"draw_test_mode": True}),
+            clear=AsyncMock(),
+        )
+        with (
+            patch.object(draw, "MCN_OWNER_ID", 123),
+            patch.object(draw, "MCN_TESTER_IDS", frozenset()),
+            patch(
+                "handlers.draw.fetch_mcn_price_usd",
+                new_callable=AsyncMock,
+                return_value=(Decimal("1"), "2026-10-09 12:00:00 UTC"),
+            ),
+            patch(
+                "handlers.draw.fetch_wallet_mcn_balance",
+                new_callable=AsyncMock,
+                return_value=Decimal("10"),
+            ),
+            patch("handlers.draw.register_draw_wallet", new_callable=AsyncMock) as register,
+        ):
+            await draw.receive_wallet_for_draw(message, state)
+
+        self.assertIn("TEST ELIGIBILITY PASS", message.answer.await_args.args[0])
+        self.assertIn("No contest entry was created", message.answer.await_args.args[0])
+        register.assert_not_awaited()
+        state.clear.assert_awaited_once()
+
+    async def test_draw_test_mode_is_restricted_to_private_configured_testers(self):
+        message = self.make_message("/drawtest", user_id=124)
+        state = SimpleNamespace(set_state=AsyncMock(), update_data=AsyncMock())
+        with (
+            patch.object(draw, "MCN_OWNER_ID", 123),
+            patch.object(draw, "MCN_TESTER_IDS", frozenset()),
+        ):
+            await draw.start_draw_test(message, state)
+
+        state.set_state.assert_not_awaited()
+        self.assertIn("restricted", message.answer.await_args.args[0])
 
     async def test_admin_participant_view_is_never_loaded_for_non_owner(self):
         message = self.make_message("/drawadmin")

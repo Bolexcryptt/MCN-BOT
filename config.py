@@ -10,3 +10,9 @@ try:
     MCN_OWNER_ID = int(os.getenv("MCN_OWNER_ID", ""))
 except ValueError:
     MCN_OWNER_ID = None
+
+MCN_TESTER_IDS = frozenset(
+    int(value.strip())
+    for value in os.getenv("MCN_TESTER_IDS", "").split(",")
+    if value.strip().isascii() and value.strip().isdigit()
+)

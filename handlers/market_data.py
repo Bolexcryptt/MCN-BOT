@@ -10,6 +10,7 @@ from urllib.request import Request, urlopen
 TOKEN_ADDRESS = "0x8e627241838b660cc90f96601952dcd7f47b7831"
 POOL_ADDRESS = "0xc3688a53e99af856fac2a43bd470eb7dd1b0668f"
 BASE_RPC_URL = "https://mainnet.base.org"
+BASE_RPC_FALLBACK_URL = "https://base-rpc.publicnode.com"
 GECKOTERMINAL_POOL_URL = (
     f"https://api.geckoterminal.com/api/v2/networks/base/pools/{POOL_ADDRESS}"
 )
@@ -102,21 +103,35 @@ async def fetch_live_metrics() -> dict[str, str]:
 
 
 def _rpc_eth_call(selector: str, contract_address: str = TOKEN_ADDRESS) -> str:
-    response = _request_json(
-        BASE_RPC_URL,
-        {
-            "jsonrpc": "2.0",
-            "method": "eth_call",
-            "params": [{"to": contract_address, "data": selector}, "latest"],
-            "id": 1,
-        },
+    payload = {
+        "jsonrpc": "2.0",
+        "method": "eth_call",
+        "params": [{"to": contract_address, "data": selector}, "latest"],
+        "id": 1,
+    }
+    errors: list[str] = []
+    for endpoint in (BASE_RPC_URL, BASE_RPC_FALLBACK_URL):
+        try:
+            response = _request_json(endpoint, payload)
+        except MarketDataError as exc:
+            errors.append(str(exc))
+            logger.warning("Base RPC endpoint %s failed: %s", endpoint, exc)
+            continue
+
+        if response.get("error"):
+            errors.append("RPC rejected eth_call")
+            logger.warning("Base RPC endpoint %s rejected eth_call", endpoint)
+            continue
+        result = response.get("result")
+        if isinstance(result, str) and result.startswith("0x"):
+            return result
+        errors.append("RPC returned no contract value")
+        logger.warning("Base RPC endpoint %s returned no contract value", endpoint)
+
+    raise MarketDataError(
+        "All configured Base RPC providers failed to return the MCN contract read. "
+        + "; ".join(errors)
     )
-    if response.get("error"):
-        raise MarketDataError("Base RPC rejected an MCN contract read.")
-    result = response.get("result")
-    if not isinstance(result, str) or not result.startswith("0x"):
-        raise MarketDataError("Base RPC returned no MCN contract value.")
-    return result
 
 
 def _load_contract_facts() -> dict[str, str]:
