@@ -157,7 +157,6 @@ async def receive_wallet_for_draw(message: types.Message, state: FSMContext):
         await state.clear()
         await message.answer("⛔ Private draw testing is restricted to the configured owner and testers.")
         return
-    await state.clear()
     try:
         price, price_updated_at = await fetch_mcn_price_usd()
         balance = await fetch_wallet_mcn_balance(wallet)
@@ -165,10 +164,12 @@ async def receive_wallet_for_draw(message: types.Message, state: FSMContext):
         logger.warning("Could not verify draw wallet %s: %s", wallet, exc)
         await message.answer(
             "⚠️ Temporary verification error: Base RPC or the MCN price source is "
-            "unavailable right now. Your wallet was not registered. Please try again."
+            "unavailable right now. Your wallet was not registered. "
+            "Please send the same public address again to retry."
         )
         return
 
+    await state.clear()
     usd_value = balance * price
     if test_mode:
         result = "✅ TEST ELIGIBILITY PASS" if usd_value >= MINIMUM_USD_VALUE else "❌ TEST ELIGIBILITY FAIL"

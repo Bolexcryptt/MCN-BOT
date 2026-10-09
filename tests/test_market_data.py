@@ -99,6 +99,30 @@ class MarketDataTest(unittest.IsolatedAsyncioTestCase):
             with self.assertRaises(MarketDataError):
                 _fetch_mcn_price_usd()
 
+    def test_draw_price_falls_back_to_mcn_pool_price_if_token_price_unavailable(self):
+        pool_response = {
+            "data": {
+                "attributes": {
+                    "base_token_price_usd": "0.000007",
+                }
+            }
+        }
+        with (
+            patch(
+                "handlers.market_data._request_json",
+                side_effect=(
+                    MarketDataError("token endpoint unavailable"),
+                    pool_response,
+                ),
+            ) as request_json,
+            patch("handlers.market_data.logger.warning"),
+        ):
+            price, updated_at = _fetch_mcn_price_usd()
+
+        self.assertEqual(str(price), "0.000007")
+        self.assertTrue(updated_at.endswith("UTC"))
+        self.assertEqual(request_json.call_count, 2)
+
     def test_base_rpc_reads_fallback_provider_if_primary_is_unavailable(self):
         with (
             patch(

@@ -207,6 +207,8 @@ class DrawMessageFlowTest(unittest.IsolatedAsyncioTestCase):
 
         register.assert_not_awaited()
         self.assertIn("Temporary verification error", message.answer.await_args.args[0])
+        self.assertIn("send the same public address again", message.answer.await_args.args[0])
+        state.clear.assert_not_awaited()
 
     async def test_draw_test_mode_performs_live_checks_without_creating_entry(self):
         wallet = "0x1234567890abcdef1234567890abcdef12345678"

@@ -187,17 +187,29 @@ async def fetch_wallet_mcn_balance(wallet: str) -> Decimal:
 
 
 def _fetch_mcn_price_usd() -> tuple[Decimal, str]:
-    response = _request_json(GECKOTERMINAL_TOKEN_URL)
-    try:
-        attributes = response["data"]["attributes"]
-        price = Decimal(str(attributes["price_usd"]))
-    except (KeyError, TypeError, InvalidOperation, ValueError) as exc:
-        raise MarketDataError("GeckoTerminal did not return a current MCN/USD price.") from exc
+    price_sources = (
+        (GECKOTERMINAL_TOKEN_URL, "price_usd"),
+        (GECKOTERMINAL_POOL_URL, "base_token_price_usd"),
+    )
+    errors: list[str] = []
+    for url, price_field in price_sources:
+        try:
+            response = _request_json(url)
+            attributes = response["data"]["attributes"]
+            price = Decimal(str(attributes[price_field]))
+            if not price.is_finite() or price <= 0:
+                raise InvalidOperation
+        except (MarketDataError, KeyError, TypeError, InvalidOperation, ValueError) as exc:
+            errors.append(f"{url}: {exc or 'invalid price'}")
+            logger.warning("MCN price source %s failed: %s", url, exc)
+            continue
 
-    if not price.is_finite() or price <= 0:
-        raise MarketDataError("GeckoTerminal returned an invalid MCN/USD price.")
-    updated_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
-    return price, updated_at
+        updated_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+        return price, updated_at
+
+    raise MarketDataError(
+        "All configured MCN price sources failed. " + "; ".join(errors)
+    )
 
 
 async def fetch_mcn_price_usd() -> tuple[Decimal, str]:
