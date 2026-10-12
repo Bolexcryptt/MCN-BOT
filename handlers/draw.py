@@ -7,13 +7,14 @@ from decimal import Decimal
 from io import StringIO
 
 import aiosqlite
-from aiogram import F, Router, types
+from aiogram import Bot, F, Router, types
+from aiogram.exceptions import TelegramAPIError
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import BufferedInputFile, InlineKeyboardButton, InlineKeyboardMarkup
 
-from config import MCN_OWNER_ID
+from config import MCN_GROUP_CHAT_ID, MCN_OWNER_ID
 from db import (
     ensure_user,
     get_draw_registrations,
@@ -211,6 +212,13 @@ async def receive_wallet_for_draw(message: types.Message, state: FSMContext):
         )
         return
 
+    participant_rows = await get_draw_registrations()
+    await _notify_draw_registration(
+        message,
+        participant_count=len(participant_rows),
+        participants=participant_rows,
+    )
+
     await message.answer(
         "🎟️ DRAW REGISTRATION\n\n"
         f"Wallet: {wallet}\n"
@@ -221,6 +229,78 @@ async def receive_wallet_for_draw(message: types.Message, state: FSMContext):
         f"Price checked: {price_updated_at}\n\n"
         "✅ Eligible — this wallet is registered. It will be checked again before the draw."
     )
+
+
+async def _notify_draw_registration(
+    message: types.Message,
+    participant_count: int,
+    participants: list[tuple],
+) -> None:
+    if MCN_OWNER_ID is not None:
+        try:
+            await _send_owner_participant_list(message.bot, participants)
+        except TelegramAPIError:
+            logger.exception(
+                "Could not send participant list to configured draw owner %s",
+                MCN_OWNER_ID,
+            )
+    else:
+        logger.error("MCN_OWNER_ID is not configured; participant DM was not sent.")
+
+    try:
+        await message.bot.send_message(
+            MCN_GROUP_CHAT_ID,
+            "🎟️ A new wallet passed MCN draw eligibility and was registered.\n"
+            f"Draw entries: {participant_count}\n\n"
+            "Wallet addresses and personal details are kept private.",
+        )
+    except TelegramAPIError:
+        logger.exception(
+            "Could not announce draw registration in configured group %s",
+            MCN_GROUP_CHAT_ID,
+        )
+
+
+async def _send_owner_participant_list(bot: Bot, participants: list[tuple]) -> None:
+    if not participants:
+        return
+    header = (
+        "🔐 MCN DRAW PARTICIPANTS · PRIVATE OWNER UPDATE\n"
+        f"Registered entries: {len(participants)}\n\n"
+    )
+    chunks: list[str] = []
+    current = header
+    for index, row in enumerate(participants, 1):
+        _, wallet, registered_at, quantity, usd_value, price, eligible, checked, checked_at, final_qty, final_usd, *rest = row
+        if rest and rest[0] == "error":
+            final_status = "⚠️ Recheck error"
+        elif checked_at is None:
+            final_status = "⏳ Final check pending"
+        else:
+            final_status = "✅ Final check passed" if checked else "❌ Final check failed"
+        item = (
+            f"{index}. {wallet}\n"
+            f"   Balance: {quantity or 'n/a'} MCN · "
+            f"Value at registration: ${(usd_value or 0):,.2f}\n"
+            f"   Registration: {registered_at} · "
+            f"{'✅ Eligible' if eligible else '❌ Ineligible'}\n"
+            f"   Final check: {final_status}"
+            + (
+                f" · {final_qty or 'n/a'} MCN (${final_usd:,.2f})"
+                if final_usd is not None
+                else ""
+            )
+            + "\n\n"
+        )
+        if len(current) + len(item) > 3500 and current.strip():
+            chunks.append(current)
+            current = ""
+        current += item
+    if current.strip():
+        chunks.append(current)
+
+    for chunk in chunks:
+        await bot.send_message(MCN_OWNER_ID, chunk)
 
 
 @router.message(Command("drawadmin"))

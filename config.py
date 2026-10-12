@@ -10,3 +10,5 @@ try:
     MCN_OWNER_ID = int(os.getenv("MCN_OWNER_ID", ""))
 except ValueError:
     MCN_OWNER_ID = None
+
+MCN_GROUP_CHAT_ID = os.getenv("MCN_GROUP_CHAT_ID", "@MaineCoonMCN").strip()

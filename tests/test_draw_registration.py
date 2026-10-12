@@ -144,8 +144,25 @@ class DrawMessageFlowTest(unittest.IsolatedAsyncioTestCase):
     async def test_eligible_wallet_is_registered_after_live_checks(self):
         wallet = "0x1234567890abcdef1234567890abcdef12345678"
         message = self.make_message(wallet)
+        participant = (
+            123,
+            wallet,
+            "2026-10-09 12:00:00 UTC",
+            "10",
+            10.0,
+            1.0,
+            1,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        message.bot = SimpleNamespace(send_message=AsyncMock())
         state = SimpleNamespace(get_data=AsyncMock(return_value={}), clear=AsyncMock())
         with (
+            patch.object(draw, "MCN_OWNER_ID", 999),
+            patch.object(draw, "MCN_GROUP_CHAT_ID", "@test_group"),
             patch(
                 "handlers.draw.fetch_mcn_price_usd",
                 new_callable=AsyncMock,
@@ -161,12 +178,26 @@ class DrawMessageFlowTest(unittest.IsolatedAsyncioTestCase):
                 new_callable=AsyncMock,
                 return_value=True,
             ) as register,
+            patch(
+                "handlers.draw.get_draw_registrations",
+                new_callable=AsyncMock,
+                return_value=[participant],
+            ),
         ):
             await draw.receive_wallet_for_draw(message, state)
 
         register.assert_awaited_once()
         self.assertIn("✅ Eligible", message.answer.await_args_list[0].args[0])
         state.clear.assert_awaited_once()
+        self.assertEqual(message.bot.send_message.await_count, 2)
+        owner_dm = message.bot.send_message.await_args_list[0]
+        self.assertEqual(owner_dm.args[0], 999)
+        self.assertIn(wallet, owner_dm.args[1])
+        group_post = message.bot.send_message.await_args_list[1]
+        self.assertEqual(group_post.args[0], "@test_group")
+        self.assertIn("Draw entries: 1", group_post.args[1])
+        self.assertNotIn(wallet, group_post.args[1])
+        self.assertNotIn("10 MCN", group_post.args[1])
 
     async def test_non_owner_can_start_regular_draw_registration_in_private_chat(self):
         user = SimpleNamespace(id=987654321, username="community_member", first_name="Member")
@@ -280,6 +311,44 @@ class DrawMessageFlowTest(unittest.IsolatedAsyncioTestCase):
 
         get_rows.assert_not_awaited()
         self.assertIn("not available", message.answer.await_args.args[0])
+
+    async def test_registration_notifications_keep_wallet_private_and_go_to_owner_and_group(self):
+        wallet = "0x1234567890abcdef1234567890abcdef12345678"
+        participants = [
+            (
+                101,
+                wallet,
+                "2026-10-09 12:00:00 UTC",
+                "100",
+                15.0,
+                0.15,
+                1,
+                None,
+                None,
+                None,
+                None,
+                None,
+            )
+        ]
+        bot = SimpleNamespace(send_message=AsyncMock())
+        message = SimpleNamespace(bot=bot)
+        with (
+            patch.object(draw, "MCN_OWNER_ID", 987654),
+            patch.object(draw, "MCN_GROUP_CHAT_ID", "-10098765"),
+        ):
+            await draw._notify_draw_registration(
+                message,
+                participant_count=1,
+                participants=participants,
+            )
+
+        self.assertEqual(bot.send_message.await_count, 2)
+        owner_dm, group_post = bot.send_message.await_args_list
+        self.assertEqual(owner_dm.args[0], 987654)
+        self.assertIn(wallet, owner_dm.args[1])
+        self.assertEqual(group_post.args[0], "-10098765")
+        self.assertIn("Draw entries: 1", group_post.args[1])
+        self.assertNotIn(wallet, group_post.args[1])
 
     async def test_owner_can_export_csv_but_other_users_cannot(self):
         participant = (
