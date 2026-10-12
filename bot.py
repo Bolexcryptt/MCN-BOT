@@ -4,7 +4,7 @@ from aiogram import Bot, Dispatcher
 from config import BOT_TOKEN
 from db import init_db
 
-from handlers import user, vault, profile, invite, leaderboard, navigation, draw
+from handlers import user, vault, profile, invite, leaderboard, navigation, draw, group_welcome
 
 if not BOT_TOKEN:
     raise RuntimeError("Set BOT_TOKEN in the deployment environment.")
@@ -18,6 +18,7 @@ dp.include_router(invite.router)
 dp.include_router(leaderboard.router)
 dp.include_router(navigation.router)
 dp.include_router(draw.router)
+dp.include_router(group_welcome.router)
 dp.include_router(vault.router)  # message catch-all must remain last
 
 async def main():

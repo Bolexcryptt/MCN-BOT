@@ -17,6 +17,12 @@ logger = logging.getLogger(__name__)
 async def start(msg: types.Message):
     await ensure_user(msg.from_user)
     parts = (msg.text or "").split(maxsplit=1)
+    if len(parts) == 2 and parts[1].casefold() == "draw":
+        from handlers.draw import show_draw_screen
+
+        await show_draw_screen(msg, msg.from_user)
+        return
+
     if (
         len(parts) == 2
         and parts[1].isascii()
